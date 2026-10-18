@@ -14,4 +14,12 @@ class EquipoRepository(
     suspend fun insertar(equipo: Equipo) {
         equipoDao.insertar(equipo)
     }
+
+    suspend fun existeCodigo(codigo: String): Boolean {
+        return equipoDao.existeCodigo(codigo)
+    }
+
+    suspend fun eliminarPorId(id: Int) {
+        equipoDao.eliminarPorId(id)
+    }
 }

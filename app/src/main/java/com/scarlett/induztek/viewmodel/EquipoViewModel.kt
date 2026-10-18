@@ -17,6 +17,9 @@ class EquipoViewModel(
     private val _equipos = MutableStateFlow<List<Equipo>>(emptyList())
     val equipos: StateFlow<List<Equipo>> = _equipos.asStateFlow()
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     init {
         viewModelScope.launch {
             repository.obtenerTodos().collect { lista ->
@@ -25,9 +28,45 @@ class EquipoViewModel(
         }
     }
 
-    fun insertar(equipo: Equipo) {
+    fun insertar(
+        equipo: Equipo,
+        alResultado: (Boolean) -> Unit
+    ) {
         viewModelScope.launch {
-            repository.insertar(equipo)
+            val codigo = equipo.codigo.trim()
+            val tipo = equipo.tipo.trim()
+
+            if (codigo.isBlank() || tipo.isBlank()) {
+                _error.value = "Completa todos los campos."
+                alResultado(false)
+                return@launch
+            }
+
+            if (repository.existeCodigo(codigo)) {
+                _error.value = "Ya existe un equipo con ese código."
+                alResultado(false)
+                return@launch
+            }
+
+            repository.insertar(
+                equipo.copy(
+                    codigo = codigo,
+                    tipo = tipo
+                )
+            )
+
+            _error.value = null
+            alResultado(true)
         }
+    }
+
+    fun eliminar(id: Int) {
+        viewModelScope.launch {
+            repository.eliminarPorId(id)
+        }
+    }
+
+    fun limpiarError() {
+        _error.value = null
     }
 }
