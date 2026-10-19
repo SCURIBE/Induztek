@@ -15,4 +15,11 @@ interface PruebaDao {
 
     @Query("SELECT * FROM pruebas ORDER BY fechaHora DESC")
     fun obtenerTodas(): Flow<List<Prueba>>
+
+    @Query(
+        "SELECT * FROM pruebas " +
+                "WHERE codigoEquipo = :codigoEquipo " +
+                "ORDER BY fechaHora DESC"
+    )
+    fun obtenerPorEquipo(codigoEquipo: String): Flow<List<Prueba>>
 }

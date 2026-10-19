@@ -9,5 +9,6 @@ data class Equipo(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val tipo: String,
-    val codigo: String
+    val codigo: String,
+    val fotoUri: String? = null
 )

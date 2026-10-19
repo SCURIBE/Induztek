@@ -1,18 +1,253 @@
+
 package com.scarlett.induztek.ui.theme.screens
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scarlett.induztek.data.RepositoryProvider
+import com.scarlett.induztek.model.Prueba
+import com.scarlett.induztek.viewmodel.EquipoViewModel
+import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
+import com.scarlett.induztek.viewmodel.PruebaViewModel
+import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NuevaPruebaScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Aquí irá el formulario de nueva prueba")
+    val context = LocalContext.current
+
+    val pruebaRepository = remember {
+        RepositoryProvider.obtenerPruebaRepository(context)
+    }
+    val equipoRepository = remember {
+        RepositoryProvider.obtenerEquipoRepository(context)
+    }
+
+    val pruebaViewModel: PruebaViewModel = viewModel(
+        factory = PruebaViewModelFactory(pruebaRepository)
+    )
+    val equipoViewModel: EquipoViewModel = viewModel(
+        factory = EquipoViewModelFactory(equipoRepository)
+    )
+
+    val equipos by equipoViewModel.equipos.collectAsState()
+    val error by pruebaViewModel.error.collectAsState()
+
+    var equipoSeleccionadoId by remember { mutableStateOf<Int?>(null) }
+    var menuExpandido by remember { mutableStateOf(false) }
+    var ubicacion by remember { mutableStateOf("") }
+    var medicionTexto by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf<String?>(null) }
+    var guardando by remember { mutableStateOf(false) }
+
+    val fechaHora = remember {
+        SimpleDateFormat(
+            "yyyy-MM-dd HH:mm",
+            Locale.getDefault()
+        ).format(Date())
+    }
+
+    val equipoSeleccionado = equipos.find {
+        it.id == equipoSeleccionadoId
+    }
+
+    Scaffold { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Nueva prueba",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Text(
+                text = "Registra los resultados de una prueba eléctrica."
+            )
+
+            ExposedDropdownMenuBox(
+                expanded = menuExpandido,
+                onExpandedChange = {
+                    menuExpandido = !menuExpandido
+                }
+            ) {
+                OutlinedTextField(
+                    value = equipoSeleccionado?.let {
+                        "${it.codigo} — ${it.tipo}"
+                    } ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Equipo") },
+                    placeholder = { Text("Selecciona un equipo") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(
+                            expanded = menuExpandido
+                        )
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+
+                DropdownMenu(
+                    expanded = menuExpandido,
+                    onDismissRequest = { menuExpandido = false }
+                ) {
+                    equipos.forEach { equipo ->
+                        DropdownMenuItem(
+                            text = {
+                                Text("${equipo.codigo} — ${equipo.tipo}")
+                            },
+                            onClick = {
+                                equipoSeleccionadoId = equipo.id
+                                menuExpandido = false
+                                mensaje = null
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (equipos.isEmpty()) {
+                Text(
+                    text = "Primero debes registrar un equipo.",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            OutlinedTextField(
+                value = ubicacion,
+                onValueChange = {
+                    ubicacion = it
+                    mensaje = null
+                    pruebaViewModel.limpiarError()
+                },
+                label = { Text("Ubicación / instalación del cliente") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = medicionTexto,
+                onValueChange = {
+                    medicionTexto = it
+                    mensaje = null
+                    pruebaViewModel.limpiarError()
+                },
+                label = { Text("Valor de medición") },
+                placeholder = { Text("Ej.: 12.5") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Fecha y hora",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(fechaHora)
+                }
+            }
+
+            if (error != null) {
+                Text(
+                    text = error!!,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            if (mensaje != null) {
+                Text(
+                    text = mensaje!!,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Button(
+                onClick = {
+                    val equipo = equipoSeleccionado
+                    val valor = medicionTexto.trim().replace(',', '.').toDoubleOrNull()
+
+                    if (equipo == null) {
+                        mensaje = "Selecciona un equipo."
+                    } else if (ubicacion.isBlank()) {
+                        mensaje = "Ingresa la ubicación del cliente."
+                    } else if (valor == null || !valor.isFinite()) {
+                        mensaje = "Ingresa una medición numérica válida."
+                    } else {
+                        guardando = true
+                        mensaje = null
+
+                        pruebaViewModel.insertar(
+                            Prueba(
+                                codigoEquipo = equipo.codigo,
+                                fechaHora = fechaHora,
+                                ubicacion = ubicacion.trim(),
+                                medicion = valor
+                            )
+                        ) { correcto ->
+                            guardando = false
+                            mensaje = if (correcto) {
+                                "Prueba guardada correctamente."
+                            } else {
+                                null
+                            }
+
+                            if (correcto) {
+                                equipoSeleccionadoId = null
+                                ubicacion = ""
+                                medicionTexto = ""
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !guardando && equipos.isNotEmpty()
+            ) {
+                if (guardando) {
+                    CircularProgressIndicator()
+                } else {
+                    Text("Guardar prueba")
+                }
+            }
+        }
     }
 }

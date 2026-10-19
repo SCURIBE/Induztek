@@ -8,7 +8,7 @@ import com.scarlett.induztek.model.Prueba
 
 @Database(
     entities = [Equipo::class, Prueba::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

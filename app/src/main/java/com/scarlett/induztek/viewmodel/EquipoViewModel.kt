@@ -60,6 +60,43 @@ class EquipoViewModel(
         }
     }
 
+    fun actualizar(
+        equipo: Equipo,
+        alResultado: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val codigo = equipo.codigo.trim()
+            val tipo = equipo.tipo.trim()
+
+            if (codigo.isBlank() || tipo.isBlank()) {
+                _error.value = "Completa todos los campos."
+                alResultado(false)
+                return@launch
+            }
+
+            if (
+                repository.existeCodigoEnOtroEquipo(
+                    codigo = codigo,
+                    id = equipo.id
+                )
+            ) {
+                _error.value = "Ese código ya pertenece a otro equipo."
+                alResultado(false)
+                return@launch
+            }
+
+            repository.actualizar(
+                equipo.copy(
+                    codigo = codigo,
+                    tipo = tipo
+                )
+            )
+
+            _error.value = null
+            alResultado(true)
+        }
+    }
+
     fun eliminar(id: Int) {
         viewModelScope.launch {
             repository.eliminarPorId(id)

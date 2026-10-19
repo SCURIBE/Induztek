@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 class EquipoRepository(
     private val equipoDao: EquipoDao
 ) {
+
     fun obtenerTodos(): Flow<List<Equipo>> {
         return equipoDao.obtenerTodos()
     }
@@ -15,8 +16,19 @@ class EquipoRepository(
         equipoDao.insertar(equipo)
     }
 
+    suspend fun actualizar(equipo: Equipo) {
+        equipoDao.actualizar(equipo)
+    }
+
     suspend fun existeCodigo(codigo: String): Boolean {
         return equipoDao.existeCodigo(codigo)
+    }
+
+    suspend fun existeCodigoEnOtroEquipo(
+        codigo: String,
+        id: Int
+    ): Boolean {
+        return equipoDao.existeCodigoEnOtroEquipo(codigo, id)
     }
 
     suspend fun eliminarPorId(id: Int) {
