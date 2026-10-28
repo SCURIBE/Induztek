@@ -11,5 +11,7 @@ data class Prueba(
     val codigoEquipo: String,
     val fechaHora: String,
     val ubicacion: String,
-    val medicion: Double
+    val medicion: Double,
+    val tipoEnsayo: String = "General",
+    val unidadMedida: String = "Sin especificar"
 )

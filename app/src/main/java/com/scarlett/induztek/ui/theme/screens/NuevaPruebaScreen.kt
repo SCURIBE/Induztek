@@ -3,7 +3,6 @@ package com.scarlett.induztek.ui.theme.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,10 +21,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,6 +54,7 @@ fun NuevaPruebaScreen() {
     val pruebaRepository = remember {
         RepositoryProvider.obtenerPruebaRepository(context)
     }
+
     val equipoRepository = remember {
         RepositoryProvider.obtenerEquipoRepository(context)
     }
@@ -58,6 +62,7 @@ fun NuevaPruebaScreen() {
     val pruebaViewModel: PruebaViewModel = viewModel(
         factory = PruebaViewModelFactory(pruebaRepository)
     )
+
     val equipoViewModel: EquipoViewModel = viewModel(
         factory = EquipoViewModelFactory(equipoRepository)
     )
@@ -65,10 +70,13 @@ fun NuevaPruebaScreen() {
     val equipos by equipoViewModel.equipos.collectAsState()
     val error by pruebaViewModel.error.collectAsState()
 
-    var equipoSeleccionadoId by remember { mutableStateOf<Int?>(null) }
+    var equipoSeleccionadoId by remember {
+        mutableStateOf<Int?>(null)
+    }
     var menuExpandido by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf("") }
     var medicionTexto by remember { mutableStateOf("") }
+    var intentoGuardar by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
 
@@ -82,6 +90,16 @@ fun NuevaPruebaScreen() {
     val equipoSeleccionado = equipos.find {
         it.id == equipoSeleccionadoId
     }
+
+    val valorMedicion = medicionTexto
+        .trim()
+        .replace(',', '.')
+        .toDoubleOrNull()
+
+    val equipoInvalido = intentoGuardar && equipoSeleccionado == null
+    val ubicacionInvalida = intentoGuardar && ubicacion.isBlank()
+    val medicionInvalida = intentoGuardar &&
+            (valorMedicion == null || !valorMedicion.isFinite())
 
     Scaffold { paddingValues ->
         Column(
@@ -98,9 +116,11 @@ fun NuevaPruebaScreen() {
             )
 
             Text(
-                text = "Registra los resultados de una prueba eléctrica."
+                text = "Registra los resultados de una prueba eléctrica.",
+                style = MaterialTheme.typography.bodyMedium
             )
 
+            // Selección del equipo
             ExposedDropdownMenuBox(
                 expanded = menuExpandido,
                 onExpandedChange = {
@@ -114,11 +134,26 @@ fun NuevaPruebaScreen() {
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Equipo") },
-                    placeholder = { Text("Selecciona un equipo") },
+                    placeholder = {
+                        Text("Selecciona un equipo")
+                    },
+                    isError = equipoInvalido,
+                    supportingText = {
+                        if (equipoInvalido) {
+                            Text("Debes seleccionar un equipo.")
+                        }
+                    },
                     trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = menuExpandido
-                        )
+                        if (equipoInvalido) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = "Equipo obligatorio"
+                            )
+                        } else {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = menuExpandido
+                            )
+                        }
                     },
                     modifier = Modifier
                         .menuAnchor()
@@ -127,7 +162,9 @@ fun NuevaPruebaScreen() {
 
                 DropdownMenu(
                     expanded = menuExpandido,
-                    onDismissRequest = { menuExpandido = false }
+                    onDismissRequest = {
+                        menuExpandido = false
+                    }
                 ) {
                     equipos.forEach { equipo ->
                         DropdownMenuItem(
@@ -138,6 +175,7 @@ fun NuevaPruebaScreen() {
                                 equipoSeleccionadoId = equipo.id
                                 menuExpandido = false
                                 mensaje = null
+                                pruebaViewModel.limpiarError()
                             }
                         )
                     }
@@ -151,6 +189,7 @@ fun NuevaPruebaScreen() {
                 )
             }
 
+            // Ubicación
             OutlinedTextField(
                 value = ubicacion,
                 onValueChange = {
@@ -158,11 +197,37 @@ fun NuevaPruebaScreen() {
                     mensaje = null
                     pruebaViewModel.limpiarError()
                 },
-                label = { Text("Ubicación / instalación del cliente") },
+                label = {
+                    Text("Ubicación / instalación del cliente")
+                },
+                placeholder = {
+                    Text("Ej.: Planta industrial")
+                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = ubicacionInvalida,
+                supportingText = {
+                    if (ubicacionInvalida) {
+                        Text("Ingresa la ubicación del cliente.")
+                    }
+                },
+                trailingIcon = {
+                    when {
+                        ubicacionInvalida -> Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Ubicación obligatoria"
+                        )
+
+                        ubicacion.isNotBlank() -> Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Ubicación completada",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
 
+            // Medición
             OutlinedTextField(
                 value = medicionTexto,
                 onValueChange = {
@@ -173,16 +238,44 @@ fun NuevaPruebaScreen() {
                 label = { Text("Valor de medición") },
                 placeholder = { Text("Ej.: 12.5") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = medicionInvalida,
+                supportingText = {
+                    if (medicionInvalida) {
+                        Text("Ingresa una medición numérica válida.")
+                    }
+                },
+                trailingIcon = {
+                    when {
+                        medicionInvalida -> Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Medición inválida"
+                        )
+
+                        valorMedicion != null &&
+                                valorMedicion.isFinite() -> Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Medición válida",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            // Fecha y hora
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
                     Text(
                         text = "Fecha y hora",
                         style = MaterialTheme.typography.titleMedium
                     )
+
                     Spacer(modifier = Modifier.height(4.dp))
+
                     Text(fechaHora)
                 }
             }
@@ -203,38 +296,51 @@ fun NuevaPruebaScreen() {
 
             Button(
                 onClick = {
+                    intentoGuardar = true
+                    mensaje = null
+
                     val equipo = equipoSeleccionado
-                    val valor = medicionTexto.trim().replace(',', '.').toDoubleOrNull()
+                    val valor = medicionTexto
+                        .trim()
+                        .replace(',', '.')
+                        .toDoubleOrNull()
 
-                    if (equipo == null) {
-                        mensaje = "Selecciona un equipo."
-                    } else if (ubicacion.isBlank()) {
-                        mensaje = "Ingresa la ubicación del cliente."
-                    } else if (valor == null || !valor.isFinite()) {
-                        mensaje = "Ingresa una medición numérica válida."
-                    } else {
-                        guardando = true
-                        mensaje = null
+                    when {
+                        equipo == null -> {
+                            mensaje = "Selecciona un equipo."
+                        }
 
-                        pruebaViewModel.insertar(
-                            Prueba(
-                                codigoEquipo = equipo.codigo,
-                                fechaHora = fechaHora,
-                                ubicacion = ubicacion.trim(),
-                                medicion = valor
-                            )
-                        ) { correcto ->
-                            guardando = false
-                            mensaje = if (correcto) {
-                                "Prueba guardada correctamente."
-                            } else {
-                                null
-                            }
+                        ubicacion.isBlank() -> {
+                            mensaje = "Ingresa la ubicación del cliente."
+                        }
 
-                            if (correcto) {
-                                equipoSeleccionadoId = null
-                                ubicacion = ""
-                                medicionTexto = ""
+                        valor == null || !valor.isFinite() -> {
+                            mensaje = "Ingresa una medición numérica válida."
+                        }
+
+                        else -> {
+                            guardando = true
+
+                            pruebaViewModel.insertar(
+                                Prueba(
+                                    codigoEquipo = equipo.codigo,
+                                    fechaHora = fechaHora,
+                                    ubicacion = ubicacion.trim(),
+                                    medicion = valor
+                                )
+                            ) { correcto ->
+                                guardando = false
+
+                                if (correcto) {
+                                    mensaje = "Prueba guardada correctamente."
+                                    intentoGuardar = false
+                                    equipoSeleccionadoId = null
+                                    ubicacion = ""
+                                    medicionTexto = ""
+                                    pruebaViewModel.limpiarGuardado()
+                                } else {
+                                    mensaje = null
+                                }
                             }
                         }
                     }

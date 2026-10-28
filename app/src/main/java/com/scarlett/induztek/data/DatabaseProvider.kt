@@ -21,8 +21,6 @@ object DatabaseProvider {
 
     private val MIGRATION_2_3 = object : Migration(2, 3) {
         override fun migrate(database: SupportSQLiteDatabase) {
-
-            // Crear la nueva tabla con identificador autogenerado.
             database.execSQL(
                 """
                 CREATE TABLE IF NOT EXISTS pruebas_nueva (
@@ -35,7 +33,6 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            // Copiar los registros existentes conservando sus identificadores.
             database.execSQL(
                 """
                 INSERT INTO pruebas_nueva (
@@ -54,6 +51,24 @@ object DatabaseProvider {
         }
     }
 
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                ALTER TABLE pruebas
+                ADD COLUMN tipoEnsayo TEXT NOT NULL DEFAULT 'General'
+                """.trimIndent()
+            )
+
+            database.execSQL(
+                """
+                ALTER TABLE pruebas
+                ADD COLUMN unidadMedida TEXT NOT NULL DEFAULT 'Sin especificar'
+                """.trimIndent()
+            )
+        }
+    }
+
     fun obtenerBaseDatos(context: Context): AppDatabase {
         return INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(
@@ -61,7 +76,11 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "induztek_db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4
+                )
                 .build()
                 .also { INSTANCE = it }
         }

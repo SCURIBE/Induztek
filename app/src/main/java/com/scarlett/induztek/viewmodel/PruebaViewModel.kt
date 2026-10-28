@@ -41,26 +41,19 @@ class PruebaViewModel(
             val codigo = prueba.codigoEquipo.trim()
             val ubicacion = prueba.ubicacion.trim()
 
-            if (codigo.isBlank()) {
-                _error.value = "Selecciona un equipo."
-                alResultado(false)
-                return@launch
-            }
+            val errorValidacion =
+                PruebaValidacion.validarEquipo(codigo)
+                    ?: PruebaValidacion.validarUbicacion(ubicacion)
+                    ?: PruebaValidacion.validarFechaHora(prueba.fechaHora)
+                    ?: if (!prueba.medicion.isFinite()) {
+                        "La medición debe ser un número válido."
+                    } else {
+                        null
+                    }
 
-            if (ubicacion.isBlank()) {
-                _error.value = "Ingresa la ubicación del cliente."
-                alResultado(false)
-                return@launch
-            }
-
-            if (prueba.fechaHora.isBlank()) {
-                _error.value = "Ingresa la fecha y hora."
-                alResultado(false)
-                return@launch
-            }
-
-            if (!prueba.medicion.isFinite()) {
-                _error.value = "Ingresa una medición válida."
+            if (errorValidacion != null) {
+                _error.value = errorValidacion
+                _guardado.value = false
                 alResultado(false)
                 return@launch
             }
@@ -77,6 +70,7 @@ class PruebaViewModel(
                 _error.value = null
                 _guardado.value = true
                 alResultado(true)
+
             } catch (e: Exception) {
                 _error.value = "No se pudo guardar la prueba."
                 _guardado.value = false

@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scarlett.induztek.data.RepositoryProvider
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
+import java.util.Locale
 
 @Composable
 fun HistorialScreen() {
@@ -45,7 +46,6 @@ fun HistorialScreen() {
     val pruebas by pruebaViewModel.pruebas.collectAsState()
     var filtro by remember { mutableStateOf("") }
 
-    // Ordenamos las pruebas de cada equipo por fecha descendente.
     val pruebasOrdenadas = pruebas.sortedByDescending {
         it.fechaHora
     }
@@ -72,7 +72,9 @@ fun HistorialScreen() {
             OutlinedTextField(
                 value = filtro,
                 onValueChange = { filtro = it },
-                label = { Text("Buscar por equipo o ubicación") },
+                label = {
+                    Text("Buscar por equipo o ubicación")
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -95,15 +97,17 @@ fun HistorialScreen() {
                         items = pruebasFiltradas,
                         key = { it.id }
                     ) { prueba ->
-                        val pruebasAnteriores = pruebas.filter {
-                            it.codigoEquipo == prueba.codigoEquipo &&
-                                    it.id != prueba.id &&
-                                    it.fechaHora < prueba.fechaHora
-                        }
 
-                        val anterior = pruebasAnteriores.maxByOrNull {
-                            it.fechaHora
-                        }
+                        // Busca pruebas anteriores del mismo equipo.
+                        val anterior = pruebas
+                            .filter {
+                                it.codigoEquipo == prueba.codigoEquipo &&
+                                        it.id != prueba.id &&
+                                        it.fechaHora < prueba.fechaHora
+                            }
+                            .maxByOrNull {
+                                it.fechaHora
+                            }
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -124,7 +128,15 @@ fun HistorialScreen() {
 
                                 Text("Ubicación: ${prueba.ubicacion}")
                                 Text("Fecha y hora: ${prueba.fechaHora}")
-                                Text("Medición actual: ${prueba.medicion}")
+                                Text(
+                                    "Medición actual: ${
+                                        String.format(
+                                            Locale.US,
+                                            "%.2f",
+                                            prueba.medicion
+                                        )
+                                    }"
+                                )
 
                                 if (anterior != null) {
                                     val diferencia =
@@ -135,23 +147,31 @@ fun HistorialScreen() {
                                     )
 
                                     Text(
-                                        text = "Medición anterior: ${anterior.medicion}"
-                                    )
-                                    Text(
-                                        text = "Fecha anterior: ${anterior.fechaHora}"
-                                    )
-                                    Text(
-                                        text = "Diferencia: ${
+                                        "Medición anterior: ${
                                             String.format(
-                                                java.util.Locale.US,
+                                                Locale.US,
                                                 "%.2f",
+                                                anterior.medicion
+                                            )
+                                        }"
+                                    )
+
+                                    Text(
+                                        "Fecha anterior: ${anterior.fechaHora}"
+                                    )
+
+                                    Text(
+                                        "Diferencia: ${
+                                            String.format(
+                                                Locale.US,
+                                                "%+.2f",
                                                 diferencia
                                             )
                                         }"
                                     )
                                 } else {
                                     Text(
-                                        text = "Sin mediciones anteriores para comparar."
+                                        "Sin mediciones anteriores para comparar."
                                     )
                                 }
                             }
