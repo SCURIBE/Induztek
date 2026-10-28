@@ -75,6 +75,8 @@ fun NuevaPruebaScreen() {
     }
     var menuExpandido by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf("") }
+    var tipoEnsayo by remember { mutableStateOf("") }
+    var unidadMedida by remember { mutableStateOf("") }
     var medicionTexto by remember { mutableStateOf("") }
     var intentoGuardar by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
@@ -98,6 +100,8 @@ fun NuevaPruebaScreen() {
 
     val equipoInvalido = intentoGuardar && equipoSeleccionado == null
     val ubicacionInvalida = intentoGuardar && ubicacion.isBlank()
+    val tipoEnsayoInvalido = intentoGuardar && tipoEnsayo.isBlank()
+    val unidadInvalida = intentoGuardar && unidadMedida.isBlank()
     val medicionInvalida = intentoGuardar &&
             (valorMedicion == null || !valorMedicion.isFinite())
 
@@ -189,7 +193,7 @@ fun NuevaPruebaScreen() {
                 )
             }
 
-            // Ubicación
+            // Ubicación del cliente
             OutlinedTextField(
                 value = ubicacion,
                 onValueChange = {
@@ -223,6 +227,50 @@ fun NuevaPruebaScreen() {
                             contentDescription = "Ubicación completada",
                             tint = MaterialTheme.colorScheme.primary
                         )
+                    }
+                }
+            )
+
+            // Tipo de ensayo
+            OutlinedTextField(
+                value = tipoEnsayo,
+                onValueChange = {
+                    tipoEnsayo = it
+                    mensaje = null
+                    pruebaViewModel.limpiarError()
+                },
+                label = { Text("Tipo de ensayo") },
+                placeholder = {
+                    Text("Ej.: nombre de la prueba realizada")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = tipoEnsayoInvalido,
+                supportingText = {
+                    if (tipoEnsayoInvalido) {
+                        Text("Ingresa el tipo de ensayo.")
+                    }
+                }
+            )
+
+            // Unidad de medida
+            OutlinedTextField(
+                value = unidadMedida,
+                onValueChange = {
+                    unidadMedida = it
+                    mensaje = null
+                    pruebaViewModel.limpiarError()
+                },
+                label = { Text("Unidad de medida") },
+                placeholder = {
+                    Text("Ej.: V, A, Ω o MΩ, según corresponda")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = unidadInvalida,
+                supportingText = {
+                    if (unidadInvalida) {
+                        Text("Ingresa la unidad de medida.")
                     }
                 }
             )
@@ -295,7 +343,7 @@ fun NuevaPruebaScreen() {
             }
 
             Button(
-                onClick = {
+                onClick =  {
                     intentoGuardar = true
                     mensaje = null
 
@@ -314,6 +362,14 @@ fun NuevaPruebaScreen() {
                             mensaje = "Ingresa la ubicación del cliente."
                         }
 
+                        tipoEnsayo.isBlank() -> {
+                            mensaje = "Ingresa el tipo de ensayo."
+                        }
+
+                        unidadMedida.isBlank() -> {
+                            mensaje = "Ingresa la unidad de medida."
+                        }
+
                         valor == null || !valor.isFinite() -> {
                             mensaje = "Ingresa una medición numérica válida."
                         }
@@ -326,7 +382,9 @@ fun NuevaPruebaScreen() {
                                     codigoEquipo = equipo.codigo,
                                     fechaHora = fechaHora,
                                     ubicacion = ubicacion.trim(),
-                                    medicion = valor
+                                    medicion = valor,
+                                    tipoEnsayo = tipoEnsayo.trim(),
+                                    unidadMedida = unidadMedida.trim()
                                 )
                             ) { correcto ->
                                 guardando = false
@@ -336,6 +394,8 @@ fun NuevaPruebaScreen() {
                                     intentoGuardar = false
                                     equipoSeleccionadoId = null
                                     ubicacion = ""
+                                    tipoEnsayo = ""
+                                    unidadMedida = ""
                                     medicionTexto = ""
                                     pruebaViewModel.limpiarGuardado()
                                 } else {
