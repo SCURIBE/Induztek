@@ -1,4 +1,4 @@
-package com.scarlett.induztek.navegation
+package com.scarlett.induztek.navegacion
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -18,5 +18,11 @@ sealed class Rutas(val ruta: String, val titulo: String, val icono: ImageVector)
     companion object {
         // Lista que recorrerá la NavigationBar para dibujar cada ítem
         val barraInferior = listOf(Equipos, NuevaPrueba, Historial)
+        const val ARG_ID = "id"
+        const val EQUIPO_DETALLE = "equipo_detalle/{$ARG_ID}"
+        const val EQUIPO_EDITAR = "equipo_editar/{$ARG_ID}"
+
+        fun equipoDetalle(id: Int) = "equipo_detalle/$id"
+        fun equipoEditar(id: Int) = "equipo_editar/$id"
     }
 }

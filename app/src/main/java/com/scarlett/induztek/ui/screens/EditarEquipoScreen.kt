@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.ui.theme.screens
+package com.scarlett.induztek.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -196,7 +196,7 @@ fun EditarEquipoScreen(
             modifier = Modifier.fillMaxWidth(),
             enabled = !guardando
         ) {
-            androidx.compose.material3.Icon(
+            Icon(
                 Icons.Default.CameraAlt,
                 contentDescription = null
             )
@@ -208,7 +208,7 @@ fun EditarEquipoScreen(
             modifier = Modifier.fillMaxWidth(),
             enabled = !guardando
         ) {
-            androidx.compose.material3.Icon(
+            Icon(
                 Icons.Default.Image,
                 contentDescription = null
             )

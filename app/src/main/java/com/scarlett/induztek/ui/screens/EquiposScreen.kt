@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.ui.theme.screens
+package com.scarlett.induztek.ui.screens
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image

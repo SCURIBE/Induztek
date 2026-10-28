@@ -1,5 +1,5 @@
 
-package com.scarlett.induztek.navegation
+package com.scarlett.induztek.navegacion
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -11,9 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -21,16 +19,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.scarlett.induztek.data.RepositoryProvider
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.ui.theme.screens.EditarEquipoScreen
-import com.scarlett.induztek.ui.theme.screens.EquipoDetalleScreen
-import com.scarlett.induztek.ui.theme.screens.EquiposScreen
-import com.scarlett.induztek.ui.theme.screens.HistorialScreen
-import com.scarlett.induztek.ui.theme.screens.NuevaPruebaScreen
+import com.scarlett.induztek.ui.screens.EditarEquipoScreen
+import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
+import com.scarlett.induztek.ui.screens.EquiposScreen
+import com.scarlett.induztek.ui.screens.HistorialScreen
+import com.scarlett.induztek.ui.screens.NuevaPruebaScreen
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
@@ -40,16 +40,16 @@ fun AppNavigation() {
     val rutaActual = entradaActual?.destination?.route
 
     val tituloActual = when (rutaActual) {
-        "equipo_detalle" -> "Detalle del equipo"
-        "equipo_editar" -> "Editar equipo"
+        Rutas.EQUIPO_DETALLE -> "Detalle del equipo"
+        Rutas.EQUIPO_EDITAR -> "Editar Equipo"
         else -> Rutas.barraInferior
             .find { it.ruta == rutaActual }
             ?.titulo ?: "Induztek"
     }
 
     val mostrarBarrasInferiores =
-        rutaActual != "equipo_detalle" &&
-                rutaActual != "equipo_editar"
+        rutaActual != Rutas.EQUIPO_DETALLE &&
+                rutaActual != Rutas.EQUIPO_EDITAR
 
     Scaffold(
         topBar = {
@@ -105,10 +105,6 @@ fun AppNavigation() {
 
         val equipos by equipoViewModel.equipos.collectAsState()
 
-        var equipoSeleccionado by remember {
-            mutableStateOf<Equipo?>(null)
-        }
-
         NavHost(
             navController = navController,
             startDestination = Rutas.Equipos.ruta,
@@ -117,16 +113,19 @@ fun AppNavigation() {
             composable(Rutas.Equipos.ruta) {
                 EquiposScreen(
                     alSeleccionarEquipo = { equipo ->
-                        equipoSeleccionado = equipo
-                        navController.navigate("equipo_detalle")
+                        navController.navigate(Rutas.equipoDetalle(equipo.id))
                     }
                 )
             }
 
-            composable("equipo_detalle") {
-                val equipo = equipos.find {
-                    it.id == equipoSeleccionado?.id
-                }
+            composable(
+                route = Rutas.EQUIPO_DETALLE,
+                arguments = listOf(
+                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                )
+            ) { entrada ->
+                val id = entrada.arguments?.getInt(Rutas.ARG_ID)
+                val equipo = equipos.find { it.id == id }
 
                 if (equipo != null) {
                     EquipoDetalleScreen(
@@ -135,22 +134,26 @@ fun AppNavigation() {
                             navController.popBackStack()
                         },
                         alEditar = { seleccionado ->
-                            equipoSeleccionado = seleccionado
-                            navController.navigate("equipo_editar")
+                            navController.navigate(
+                                Rutas.equipoEditar(seleccionado.id)
+                            )
                         },
                         alEliminar = { seleccionado ->
                             equipoViewModel.eliminar(seleccionado.id)
-                            equipoSeleccionado = null
                             navController.popBackStack()
                         }
                     )
                 }
             }
 
-            composable("equipo_editar") {
-                val equipo = equipos.find {
-                    it.id == equipoSeleccionado?.id
-                }
+            composable(
+                route = Rutas.EQUIPO_EDITAR,
+                arguments = listOf(
+                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                )
+            ) { entrada ->
+                val id = entrada.arguments?.getInt(Rutas.ARG_ID)
+                val equipo = equipos.find { it.id == id }
 
                 if (equipo != null) {
                     val error by equipoViewModel.error.collectAsState()
@@ -162,7 +165,6 @@ fun AppNavigation() {
                                 resultado(guardado)
 
                                 if (guardado) {
-                                    equipoSeleccionado = actualizado
                                     navController.popBackStack()
                                 }
                             }

@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.ui.theme.screens
+package com.scarlett.induztek.ui.screens
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
@@ -11,7 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Memory
@@ -62,7 +61,7 @@ fun EquipoDetalleScreen(
     ) {
         TextButton(onClick = alVolver) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null
             )
             Text(" Volver a equipos")

@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.ui.theme.screens
+package com.scarlett.induztek.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -160,11 +159,11 @@ fun NuevaPruebaScreen() {
                         }
                     },
                     modifier = Modifier
-                        .menuAnchor()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
 
-                DropdownMenu(
+                ExposedDropdownMenu(
                     expanded = menuExpandido,
                     onDismissRequest = {
                         menuExpandido = false

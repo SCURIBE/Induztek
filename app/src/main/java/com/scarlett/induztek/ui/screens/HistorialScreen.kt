@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.ui.theme.screens
+package com.scarlett.induztek.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
