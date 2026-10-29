@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.data.EquipoRepository
 import com.scarlett.induztek.model.Equipo
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,12 +26,6 @@ class EquipoViewModel(
                 _equipos.value = lista
             }
         }
-    }
-
-    // Cuántas pruebas tiene un equipo. La usa el diálogo de eliminación
-    // para avisar cuántas se van a borrar en cascada.
-    fun cantidadPruebas(equipoId: Int): Flow<Int> {
-        return repository.observarCantidadPruebas(equipoId)
     }
 
     fun insertar(

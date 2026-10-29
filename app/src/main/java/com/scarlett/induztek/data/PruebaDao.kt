@@ -40,6 +40,12 @@ interface PruebaDao {
     @Query("SELECT * FROM pruebas ORDER BY fechaHora DESC")
     fun obtenerTodasConMediciones(): Flow<List<PruebaConMediciones>>
 
+    // Devuelve null si la prueba ya no existe, por ejemplo si se
+    // elimino su equipo mientras la pantalla de detalle estaba abierta.
+    @Transaction
+    @Query("SELECT * FROM pruebas WHERE id = :id")
+    fun obtenerPorIdConMediciones(id: Int): Flow<PruebaConMediciones?>
+
     @Transaction
     @Query(
         "SELECT * FROM pruebas " +

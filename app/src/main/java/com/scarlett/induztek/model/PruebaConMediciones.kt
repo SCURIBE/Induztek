@@ -16,9 +16,4 @@ data class PruebaConMediciones(
         entityColumn = "pruebaId"
     )
     val mediciones: List<Medicion>
-) {
-    // Valor que representa a la prueba en el historial. Mientras la
-    // pantalla registre una sola medición, es esa.
-    val valorPrincipal: Double?
-        get() = mediciones.firstOrNull()?.valor
-}
+)

@@ -27,19 +27,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.ui.componentes.TarjetaPrueba
 import com.scarlett.induztek.util.AlmacenFotos
 
 @Composable
 fun EquipoDetalleScreen(
     equipo: Equipo,
-    // Cuántas pruebas tiene este equipo. Se avisa en el diálogo de
-    // eliminación, porque al borrar el equipo se borran también ellas.
-    cantidadPruebas: Int,
+    // Las pruebas de este equipo, ya filtradas. Sirven para el
+    // historial de abajo y para avisar en el diálogo de eliminación
+    // cuántas se van a borrar en cascada.
+    pruebas: List<PruebaConMediciones>,
     alVolver: () -> Unit,
     alEditar: (Equipo) -> Unit,
-    alEliminar: (Equipo) -> Unit
+    alEliminar: (Equipo) -> Unit,
+    alVerPrueba: (Int) -> Unit
 ) {
+    val cantidadPruebas = pruebas.size
     var confirmarEliminacion by remember {
         mutableStateOf(false)
     }
@@ -51,6 +59,7 @@ fun EquipoDetalleScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -164,6 +173,35 @@ fun EquipoDetalleScreen(
                 text = "  Eliminar equipo",
                 color = MaterialTheme.colorScheme.error
             )
+        }
+
+        HorizontalDivider()
+
+        Text(
+            text = "Historial de este equipo",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        if (pruebas.isEmpty()) {
+            Text(
+                text = "Todavía no hay pruebas registradas para este " +
+                        "equipo.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            // forEach y no LazyColumn: esta columna ya tiene scroll, y
+            // anidar una lista perezosa dentro de un scroll no está
+            // permitido en Compose.
+            pruebas.forEach { conMediciones ->
+                TarjetaPrueba(
+                    conMediciones = conMediciones,
+                    todas = pruebas,
+                    alAbrir = {
+                        alVerPrueba(conMediciones.prueba.id)
+                    }
+                )
+            }
         }
     }
 

@@ -22,7 +22,10 @@ sealed class Rutas(val ruta: String, val titulo: String, val icono: ImageVector)
         const val EQUIPO_DETALLE = "equipo_detalle/{$ARG_ID}"
         const val EQUIPO_EDITAR = "equipo_editar/{$ARG_ID}"
 
+        const val PRUEBA_DETALLE = "prueba_detalle/{$ARG_ID}"
+
         fun equipoDetalle(id: Int) = "equipo_detalle/$id"
         fun equipoEditar(id: Int) = "equipo_editar/$id"
+        fun pruebaDetalle(id: Int) = "prueba_detalle/$id"
     }
 }

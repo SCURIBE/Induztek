@@ -36,10 +36,4 @@ interface EquipoDao {
 
     @Query("DELETE FROM equipos WHERE id = :id")
     suspend fun eliminarPorId(id: Int)
-
-    // Cuenta las pruebas de un equipo. Vive en este DAO porque quien la
-    // necesita es la pantalla del equipo: el diálogo de eliminación
-    // avisa cuántas pruebas se van a borrar en cascada.
-    @Query("SELECT COUNT(*) FROM pruebas WHERE equipoId = :id")
-    fun observarCantidadPruebas(id: Int): Flow<Int>
 }

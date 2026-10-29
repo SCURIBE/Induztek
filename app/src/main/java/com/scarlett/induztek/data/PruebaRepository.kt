@@ -14,6 +14,10 @@ class PruebaRepository(
         return pruebaDao.obtenerTodasConMediciones()
     }
 
+    fun obtenerPorId(id: Int): Flow<PruebaConMediciones?> {
+        return pruebaDao.obtenerPorIdConMediciones(id)
+    }
+
     fun obtenerPorEquipo(
         equipoId: Int
     ): Flow<List<PruebaConMediciones>> {

@@ -24,8 +24,11 @@ import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
 import com.scarlett.induztek.ui.screens.EquiposScreen
 import com.scarlett.induztek.ui.screens.HistorialScreen
 import com.scarlett.induztek.ui.screens.NuevaPruebaScreen
+import com.scarlett.induztek.ui.screens.PruebaDetalleScreen
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
+import com.scarlett.induztek.viewmodel.PruebaViewModel
+import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavType
@@ -42,6 +45,7 @@ fun AppNavigation() {
     val tituloActual = when (rutaActual) {
         Rutas.EQUIPO_DETALLE -> "Detalle del equipo"
         Rutas.EQUIPO_EDITAR -> "Editar Equipo"
+        Rutas.PRUEBA_DETALLE -> "Protocolo de prueba"
         else -> Rutas.barraInferior
             .find { it.ruta == rutaActual }
             ?.titulo ?: "Induztek"
@@ -49,7 +53,8 @@ fun AppNavigation() {
 
     val mostrarBarrasInferiores =
         rutaActual != Rutas.EQUIPO_DETALLE &&
-                rutaActual != Rutas.EQUIPO_EDITAR
+                rutaActual != Rutas.EQUIPO_EDITAR &&
+                rutaActual != Rutas.PRUEBA_DETALLE
 
     Scaffold(
         topBar = {
@@ -103,7 +108,16 @@ fun AppNavigation() {
             factory = factory
         )
 
+        val pruebaRepository = remember {
+            RepositoryProvider.obtenerPruebaRepository(context)
+        }
+
+        val pruebaViewModel: PruebaViewModel = viewModel(
+            factory = PruebaViewModelFactory(pruebaRepository)
+        )
+
         val equipos by equipoViewModel.equipos.collectAsState()
+        val pruebas by pruebaViewModel.pruebas.collectAsState()
 
         NavHost(
             navController = navController,
@@ -128,16 +142,18 @@ fun AppNavigation() {
                 val equipo = equipos.find { it.id == id }
 
                 if (equipo != null) {
-                    // La cantidad de pruebas se observa aparte y no se
-                    // guarda en el equipo: cambia cada vez que se
-                    // registra una prueba.
-                    val cantidadPruebas by remember(equipo.id) {
-                        equipoViewModel.cantidadPruebas(equipo.id)
-                    }.collectAsState(initial = 0)
+                    val pruebasDelEquipo = pruebas.filter {
+                        it.prueba.equipoId == equipo.id
+                    }
 
                     EquipoDetalleScreen(
                         equipo = equipo,
-                        cantidadPruebas = cantidadPruebas,
+                        pruebas = pruebasDelEquipo,
+                        alVerPrueba = { pruebaId ->
+                            navController.navigate(
+                                Rutas.pruebaDetalle(pruebaId)
+                            )
+                        },
                         alVolver = {
                             navController.popBackStack()
                         },
@@ -185,12 +201,34 @@ fun AppNavigation() {
                 }
             }
 
+            composable(
+                route = Rutas.PRUEBA_DETALLE,
+                arguments = listOf(
+                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                )
+            ) { entrada ->
+                val id = entrada.arguments?.getInt(Rutas.ARG_ID)
+
+                if (id != null) {
+                    PruebaDetalleScreen(
+                        pruebaId = id,
+                        alVolver = { navController.popBackStack() }
+                    )
+                }
+            }
+
             composable(Rutas.NuevaPrueba.ruta) {
                 NuevaPruebaScreen()
             }
 
             composable(Rutas.Historial.ruta) {
-                HistorialScreen()
+                HistorialScreen(
+                    alSeleccionarPrueba = { pruebaId ->
+                        navController.navigate(
+                            Rutas.pruebaDetalle(pruebaId)
+                        )
+                    }
+                )
             }
         }
     }

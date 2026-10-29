@@ -4,7 +4,6 @@ package com.scarlett.induztek.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.data.PruebaRepository
-import com.scarlett.induztek.model.Medicion
 import com.scarlett.induztek.model.Prueba
 import com.scarlett.induztek.model.PruebaConMediciones
 import com.scarlett.induztek.model.TipoEnsayo
@@ -38,9 +37,9 @@ class PruebaViewModel(
     }
 
     /*
-     * Registra una prueba con una medición. La pantalla entrega lo que
-     * el usuario eligió y escribió; el ViewModel valida, arma la
-     * entidad y guarda.
+     * Registra una prueba con sus mediciones. La pantalla entrega lo
+     * que el usuario eligió y escribió; el ViewModel valida, arma las
+     * entidades y guarda todo en una sola transacción.
      *
      * La fecha se toma aquí, al guardar, y no al abrir la pantalla:
      * antes la pantalla la calculaba una sola vez con remember, así que
@@ -51,7 +50,10 @@ class PruebaViewModel(
         ubicacion: String,
         tipoEnsayo: TipoEnsayo?,
         unidadMedida: UnidadMedida?,
-        medicionTexto: String,
+        mediciones: List<MedicionIngresada>,
+        cliente: String = "",
+        tecnicoResponsable: String = "",
+        observaciones: String = "",
         alResultado: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
@@ -63,7 +65,7 @@ class PruebaViewModel(
                         tipoEnsayo,
                         unidadMedida
                     )
-                    ?: PruebaValidacion.validarMedicion(medicionTexto)
+                    ?: PruebaValidacion.validarMediciones(mediciones)
 
             if (errorValidacion != null) {
                 _error.value = errorValidacion
@@ -75,13 +77,10 @@ class PruebaViewModel(
             // Las validaciones de arriba ya garantizan que ninguno es
             // null, pero el compilador no lo sabe: esto convierte los
             // tipos nullables en no nullables.
-            val valor = PruebaValidacion.medicionDesdeTexto(medicionTexto)
-
             if (
                 equipoId == null ||
                 tipoEnsayo == null ||
-                unidadMedida == null ||
-                valor == null
+                unidadMedida == null
             ) {
                 _error.value = "Revisa los datos de la prueba."
                 _guardado.value = false
@@ -96,15 +95,12 @@ class PruebaViewModel(
                         fechaHora = System.currentTimeMillis(),
                         ubicacion = ubicacion.trim(),
                         tipoEnsayo = tipoEnsayo,
-                        unidadMedida = unidadMedida
+                        unidadMedida = unidadMedida,
+                        cliente = cliente.trim(),
+                        tecnicoResponsable = tecnicoResponsable.trim(),
+                        observaciones = observaciones.trim()
                     ),
-                    mediciones = listOf(
-                        Medicion(
-                            pruebaId = 0,
-                            nombre = "Medición",
-                            valor = valor
-                        )
-                    )
+                    mediciones = PruebaValidacion.aMediciones(mediciones)
                 )
 
                 _error.value = null
