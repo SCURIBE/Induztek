@@ -1,6 +1,5 @@
 package com.scarlett.induztek.ui.screens
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scarlett.induztek.data.RepositoryProvider
 import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.util.AlmacenFotos
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
 
@@ -198,13 +198,7 @@ fun EquiposScreen(
                                         Arrangement.spacedBy(14.dp)
                                 ) {
                                     val miniatura = remember(equipo.fotoUri) {
-                                        equipo.fotoUri?.let { ruta ->
-                                            try {
-                                                BitmapFactory.decodeFile(ruta)
-                                            } catch (_: Exception) {
-                                                null
-                                            }
-                                        }
+                                        AlmacenFotos.leer(equipo.fotoUri)
                                     }
 
                                     if (miniatura != null) {

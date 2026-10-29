@@ -1,6 +1,5 @@
 package com.scarlett.induztek.ui.screens
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,10 +26,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.scarlett.induztek.model.Equipo
-import java.io.File
+import com.scarlett.induztek.util.AlmacenFotos
 
 @Composable
 fun EquipoDetalleScreen(
@@ -47,13 +45,7 @@ fun EquipoDetalleScreen(
     }
 
     val bitmap = remember(equipo.fotoUri) {
-        equipo.fotoUri?.let { ruta ->
-            try {
-                BitmapFactory.decodeFile(ruta)
-            } catch (_: Exception) {
-                null
-            }
-        }
+        AlmacenFotos.leer(equipo.fotoUri)
     }
 
     Column(

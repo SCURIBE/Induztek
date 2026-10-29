@@ -34,8 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.scarlett.induztek.model.TipoEquipo
 import com.scarlett.induztek.ui.componentes.CampoSeleccion
-import java.io.File
-import java.io.FileOutputStream
+import com.scarlett.induztek.util.AlmacenFotos
 
 @Composable
 fun NuevoEquipoScreen(
@@ -54,25 +53,6 @@ fun NuevoEquipoScreen(
 
     val mensajeError = errorExterno ?: errorLocal
 
-    fun guardarBitmap(bitmap: Bitmap): String {
-        val carpeta = File(context.filesDir, "evidencias")
-
-        if (!carpeta.exists() && !carpeta.mkdirs()) {
-            throw IllegalStateException("No se pudo crear la carpeta de evidencias.")
-        }
-
-        val archivo = File(
-            carpeta,
-            "equipo_${System.currentTimeMillis()}.jpg"
-        )
-
-        FileOutputStream(archivo).use { salida ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, salida)
-        }
-
-        return archivo.absolutePath
-    }
-
     val galeria = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -83,7 +63,7 @@ fun NuevoEquipoScreen(
                     ?.use { BitmapFactory.decodeStream(it) }
 
                 if (bitmap != null) {
-                    fotoUri = guardarBitmap(bitmap)
+                    fotoUri = AlmacenFotos.guardar(context, bitmap)
                     foto = bitmap
                     errorLocal = null
                 } else {
@@ -100,7 +80,7 @@ fun NuevoEquipoScreen(
     ) { bitmap: Bitmap? ->
         if (bitmap != null) {
             try {
-                fotoUri = guardarBitmap(bitmap)
+                fotoUri = AlmacenFotos.guardar(context, bitmap)
                 foto = bitmap
                 errorLocal = null
             } catch (e: Exception) {
