@@ -15,11 +15,6 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -36,16 +31,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scarlett.induztek.data.RepositoryProvider
-import com.scarlett.induztek.model.Prueba
+import com.scarlett.induztek.model.TipoEnsayo
+import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.ui.componentes.CampoSeleccion
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
+import com.scarlett.induztek.viewmodel.PruebaValidacion
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NuevaPruebaScreen() {
     val context = LocalContext.current
@@ -69,40 +63,40 @@ fun NuevaPruebaScreen() {
     val equipos by equipoViewModel.equipos.collectAsState()
     val error by pruebaViewModel.error.collectAsState()
 
-    var equipoSeleccionadoId by remember {
-        mutableStateOf<Int?>(null)
-    }
-    var menuExpandido by remember { mutableStateOf(false) }
+    var equipoSeleccionadoId by remember { mutableStateOf<Int?>(null) }
     var ubicacion by remember { mutableStateOf("") }
-    var tipoEnsayo by remember { mutableStateOf("") }
-    var unidadMedida by remember { mutableStateOf("") }
+    var tipoEnsayo by remember { mutableStateOf<TipoEnsayo?>(null) }
+    var unidadMedida by remember { mutableStateOf<UnidadMedida?>(null) }
     var medicionTexto by remember { mutableStateOf("") }
     var intentoGuardar by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
 
-    val fechaHora = remember {
-        SimpleDateFormat(
-            "yyyy-MM-dd HH:mm",
-            Locale.getDefault()
-        ).format(Date())
-    }
-
     val equipoSeleccionado = equipos.find {
         it.id == equipoSeleccionadoId
     }
 
-    val valorMedicion = medicionTexto
-        .trim()
-        .replace(',', '.')
-        .toDoubleOrNull()
+    val valorMedicion = PruebaValidacion.medicionDesdeTexto(medicionTexto)
 
-    val equipoInvalido = intentoGuardar && equipoSeleccionado == null
-    val ubicacionInvalida = intentoGuardar && ubicacion.isBlank()
-    val tipoEnsayoInvalido = intentoGuardar && tipoEnsayo.isBlank()
-    val unidadInvalida = intentoGuardar && unidadMedida.isBlank()
-    val medicionInvalida = intentoGuardar &&
-            (valorMedicion == null || !valorMedicion.isFinite())
+    // Las unidades que se ofrecen dependen del ensayo elegido, para no
+    // guardar por ejemplo un aislamiento medido en milisegundos.
+    val unidadesDisponibles = tipoEnsayo?.unidades ?: emptyList()
+
+    // Los mensajes vienen de PruebaValidacion, las mismas funciones que
+    // usa el ViewModel al guardar, en vez de repetir las reglas aquí.
+    val errorEquipo = PruebaValidacion.validarEquipo(equipoSeleccionadoId)
+    val errorUbicacion = PruebaValidacion.validarUbicacion(ubicacion)
+    val errorTipoEnsayo = PruebaValidacion.validarTipoEnsayo(tipoEnsayo)
+    val errorUnidad = PruebaValidacion.validarUnidad(
+        tipoEnsayo,
+        unidadMedida
+    )
+    val errorMedicion = PruebaValidacion.validarMedicion(medicionTexto)
+
+    fun limpiarAvisos() {
+        mensaje = null
+        pruebaViewModel.limpiarError()
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -123,67 +117,20 @@ fun NuevaPruebaScreen() {
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            // Selección del equipo
-            ExposedDropdownMenuBox(
-                expanded = menuExpandido,
-                onExpandedChange = {
-                    menuExpandido = !menuExpandido
-                }
-            ) {
-                OutlinedTextField(
-                    value = equipoSeleccionado?.let {
-                        "${it.codigo} — ${it.tipo}"
-                    } ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Equipo") },
-                    placeholder = {
-                        Text("Selecciona un equipo")
-                    },
-                    isError = equipoInvalido,
-                    supportingText = {
-                        if (equipoInvalido) {
-                            Text("Debes seleccionar un equipo.")
-                        }
-                    },
-                    trailingIcon = {
-                        if (equipoInvalido) {
-                            Icon(
-                                imageVector = Icons.Default.Error,
-                                contentDescription = "Equipo obligatorio"
-                            )
-                        } else {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = menuExpandido
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = menuExpandido,
-                    onDismissRequest = {
-                        menuExpandido = false
-                    }
-                ) {
-                    equipos.forEach { equipo ->
-                        DropdownMenuItem(
-                            text = {
-                                Text("${equipo.codigo} — ${equipo.tipo}")
-                            },
-                            onClick = {
-                                equipoSeleccionadoId = equipo.id
-                                menuExpandido = false
-                                mensaje = null
-                                pruebaViewModel.limpiarError()
-                            }
-                        )
-                    }
-                }
-            }
+            CampoSeleccion(
+                etiqueta = "Equipo",
+                textoVacio = "Selecciona un equipo",
+                opciones = equipos,
+                seleccion = equipoSeleccionado,
+                textoDe = { "${it.codigo} — ${it.tipo.etiqueta}" },
+                alSeleccionar = {
+                    equipoSeleccionadoId = it.id
+                    limpiarAvisos()
+                },
+                esInvalido = intentoGuardar && errorEquipo != null,
+                mensajeError = errorEquipo ?: "",
+                habilitado = !guardando
+            )
 
             if (equipos.isEmpty()) {
                 Text(
@@ -192,31 +139,26 @@ fun NuevaPruebaScreen() {
                 )
             }
 
-            // Ubicación del cliente
             OutlinedTextField(
                 value = ubicacion,
                 onValueChange = {
                     ubicacion = it
-                    mensaje = null
-                    pruebaViewModel.limpiarError()
+                    limpiarAvisos()
                 },
-                label = {
-                    Text("Ubicación / instalación del cliente")
-                },
-                placeholder = {
-                    Text("Ej.: Planta industrial")
-                },
+                label = { Text("Ubicación / instalación del cliente") },
+                placeholder = { Text("Ej.: Planta industrial") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = ubicacionInvalida,
+                enabled = !guardando,
+                isError = intentoGuardar && errorUbicacion != null,
                 supportingText = {
-                    if (ubicacionInvalida) {
-                        Text("Ingresa la ubicación del cliente.")
+                    if (intentoGuardar && errorUbicacion != null) {
+                        Text(errorUbicacion)
                     }
                 },
                 trailingIcon = {
                     when {
-                        ubicacionInvalida -> Icon(
+                        intentoGuardar && errorUbicacion != null -> Icon(
                             imageVector = Icons.Default.Error,
                             contentDescription = "Ubicación obligatoria"
                         )
@@ -230,71 +172,71 @@ fun NuevaPruebaScreen() {
                 }
             )
 
-            // Tipo de ensayo
-            OutlinedTextField(
-                value = tipoEnsayo,
-                onValueChange = {
-                    tipoEnsayo = it
-                    mensaje = null
-                    pruebaViewModel.limpiarError()
-                },
-                label = { Text("Tipo de ensayo") },
-                placeholder = {
-                    Text("Ej.: nombre de la prueba realizada")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = tipoEnsayoInvalido,
-                supportingText = {
-                    if (tipoEnsayoInvalido) {
-                        Text("Ingresa el tipo de ensayo.")
+            CampoSeleccion(
+                etiqueta = "Tipo de ensayo",
+                textoVacio = "Selecciona el ensayo realizado",
+                opciones = TipoEnsayo.entries,
+                seleccion = tipoEnsayo,
+                textoDe = { it.etiqueta },
+                alSeleccionar = { elegido ->
+                    tipoEnsayo = elegido
+
+                    // Si la unidad elegida no sirve para el ensayo
+                    // nuevo, se reemplaza por la que corresponde.
+                    if (unidadMedida !in elegido.unidades) {
+                        unidadMedida = elegido.unidadPorDefecto
                     }
-                }
+
+                    limpiarAvisos()
+                },
+                esInvalido = intentoGuardar && errorTipoEnsayo != null,
+                mensajeError = errorTipoEnsayo ?: "",
+                habilitado = !guardando
             )
 
-            // Unidad de medida
-            OutlinedTextField(
-                value = unidadMedida,
-                onValueChange = {
+            CampoSeleccion(
+                etiqueta = "Unidad de medida",
+                textoVacio = if (tipoEnsayo == null) {
+                    "Elige primero el tipo de ensayo"
+                } else {
+                    "Selecciona la unidad"
+                },
+                opciones = unidadesDisponibles,
+                seleccion = unidadMedida,
+                textoDe = { it.simbolo },
+                alSeleccionar = {
                     unidadMedida = it
-                    mensaje = null
-                    pruebaViewModel.limpiarError()
+                    limpiarAvisos()
                 },
-                label = { Text("Unidad de medida") },
-                placeholder = {
-                    Text("Ej.: V, A, Ω o MΩ, según corresponda")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = unidadInvalida,
-                supportingText = {
-                    if (unidadInvalida) {
-                        Text("Ingresa la unidad de medida.")
-                    }
-                }
+                esInvalido = intentoGuardar && errorUnidad != null,
+                mensajeError = errorUnidad ?: "",
+                habilitado = !guardando && tipoEnsayo != null
             )
 
-            // Medición
             OutlinedTextField(
                 value = medicionTexto,
                 onValueChange = {
                     medicionTexto = it
-                    mensaje = null
-                    pruebaViewModel.limpiarError()
+                    limpiarAvisos()
                 },
                 label = { Text("Valor de medición") },
                 placeholder = { Text("Ej.: 12.5") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = medicionInvalida,
+                enabled = !guardando,
+                isError = intentoGuardar && errorMedicion != null,
                 supportingText = {
-                    if (medicionInvalida) {
-                        Text("Ingresa una medición numérica válida.")
+                    val unidad = unidadMedida
+
+                    if (intentoGuardar && errorMedicion != null) {
+                        Text(errorMedicion)
+                    } else if (unidad != null) {
+                        Text("Se registrará en ${unidad.simbolo}.")
                     }
                 },
                 trailingIcon = {
                     when {
-                        medicionInvalida -> Icon(
+                        intentoGuardar && errorMedicion != null -> Icon(
                             imageVector = Icons.Default.Error,
                             contentDescription = "Medición inválida"
                         )
@@ -309,13 +251,8 @@ fun NuevaPruebaScreen() {
                 }
             )
 
-            // Fecha y hora
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Fecha y hora",
                         style = MaterialTheme.typography.titleMedium
@@ -323,7 +260,10 @@ fun NuevaPruebaScreen() {
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(fechaHora)
+                    Text(
+                        text = "Se registra automáticamente al guardar.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
 
@@ -342,65 +282,29 @@ fun NuevaPruebaScreen() {
             }
 
             Button(
-                onClick =  {
+                onClick = {
                     intentoGuardar = true
                     mensaje = null
+                    guardando = true
 
-                    val equipo = equipoSeleccionado
-                    val valor = medicionTexto
-                        .trim()
-                        .replace(',', '.')
-                        .toDoubleOrNull()
+                    pruebaViewModel.registrar(
+                        equipoId = equipoSeleccionadoId,
+                        ubicacion = ubicacion,
+                        tipoEnsayo = tipoEnsayo,
+                        unidadMedida = unidadMedida,
+                        medicionTexto = medicionTexto
+                    ) { correcto ->
+                        guardando = false
 
-                    when {
-                        equipo == null -> {
-                            mensaje = "Selecciona un equipo."
-                        }
-
-                        ubicacion.isBlank() -> {
-                            mensaje = "Ingresa la ubicación del cliente."
-                        }
-
-                        tipoEnsayo.isBlank() -> {
-                            mensaje = "Ingresa el tipo de ensayo."
-                        }
-
-                        unidadMedida.isBlank() -> {
-                            mensaje = "Ingresa la unidad de medida."
-                        }
-
-                        valor == null || !valor.isFinite() -> {
-                            mensaje = "Ingresa una medición numérica válida."
-                        }
-
-                        else -> {
-                            guardando = true
-
-                            pruebaViewModel.insertar(
-                                Prueba(
-                                    codigoEquipo = equipo.codigo,
-                                    fechaHora = fechaHora,
-                                    ubicacion = ubicacion.trim(),
-                                    medicion = valor,
-                                    tipoEnsayo = tipoEnsayo.trim(),
-                                    unidadMedida = unidadMedida.trim()
-                                )
-                            ) { correcto ->
-                                guardando = false
-
-                                if (correcto) {
-                                    mensaje = "Prueba guardada correctamente."
-                                    intentoGuardar = false
-                                    equipoSeleccionadoId = null
-                                    ubicacion = ""
-                                    tipoEnsayo = ""
-                                    unidadMedida = ""
-                                    medicionTexto = ""
-                                    pruebaViewModel.limpiarGuardado()
-                                } else {
-                                    mensaje = null
-                                }
-                            }
+                        if (correcto) {
+                            mensaje = "Prueba guardada correctamente."
+                            intentoGuardar = false
+                            equipoSeleccionadoId = null
+                            ubicacion = ""
+                            tipoEnsayo = null
+                            unidadMedida = null
+                            medicionTexto = ""
+                            pruebaViewModel.limpiarGuardado()
                         }
                     }
                 },
@@ -408,7 +312,9 @@ fun NuevaPruebaScreen() {
                 enabled = !guardando && equipos.isNotEmpty()
             ) {
                 if (guardando) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(18.dp)
+                    )
                 } else {
                     Text("Guardar prueba")
                 }

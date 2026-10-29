@@ -34,4 +34,8 @@ class EquipoRepository(
     suspend fun eliminarPorId(id: Int) {
         equipoDao.eliminarPorId(id)
     }
+
+    fun observarCantidadPruebas(id: Int): Flow<Int> {
+        return equipoDao.observarCantidadPruebas(id)
+    }
 }

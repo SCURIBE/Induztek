@@ -26,6 +26,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scarlett.induztek.data.RepositoryProvider
+import com.scarlett.induztek.util.FechaFormato
+import com.scarlett.induztek.viewmodel.EquipoViewModel
+import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
+import com.scarlett.induztek.viewmodel.HistorialComparacion
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
 import java.util.Locale
@@ -34,25 +38,43 @@ import java.util.Locale
 fun HistorialScreen() {
     val context = LocalContext.current
 
-    val repository = remember {
+    val pruebaRepository = remember {
         RepositoryProvider.obtenerPruebaRepository(context)
     }
 
-    val pruebaViewModel: PruebaViewModel = viewModel(
-        factory = PruebaViewModelFactory(repository)
-    )
-
-    val pruebas by pruebaViewModel.pruebas.collectAsState()
-    var filtro by remember { mutableStateOf("") }
-
-    val pruebasOrdenadas = pruebas.sortedByDescending {
-        it.fechaHora
+    val equipoRepository = remember {
+        RepositoryProvider.obtenerEquipoRepository(context)
     }
 
-    val pruebasFiltradas = pruebasOrdenadas.filter {
-        it.codigoEquipo.contains(filtro, ignoreCase = true) ||
-                it.ubicacion.contains(filtro, ignoreCase = true) ||
-                it.tipoEnsayo.contains(filtro, ignoreCase = true)
+    val pruebaViewModel: PruebaViewModel = viewModel(
+        factory = PruebaViewModelFactory(pruebaRepository)
+    )
+
+    val equipoViewModel: EquipoViewModel = viewModel(
+        factory = EquipoViewModelFactory(equipoRepository)
+    )
+
+    // La prueba guarda el id del equipo, no su código. El código se
+    // busca en la lista de equipos solo para mostrarlo y buscarlo.
+    val pruebas by pruebaViewModel.pruebas.collectAsState()
+    val equipos by equipoViewModel.equipos.collectAsState()
+
+    var filtro by remember { mutableStateOf("") }
+
+    val codigoPorEquipo = equipos.associate { it.id to it.codigo }
+
+    val pruebasFiltradas = pruebas.filter { conMediciones ->
+        val codigo = codigoPorEquipo[conMediciones.prueba.equipoId] ?: ""
+
+        codigo.contains(filtro, ignoreCase = true) ||
+                conMediciones.prueba.ubicacion
+                    .contains(filtro, ignoreCase = true) ||
+                conMediciones.prueba.tipoEnsayo.etiqueta
+                    .contains(filtro, ignoreCase = true)
+    }
+
+    fun formatear(valor: Double): String {
+        return String.format(Locale.US, "%.2f", valor)
     }
 
     Scaffold { paddingValues ->
@@ -95,25 +117,25 @@ fun HistorialScreen() {
                 ) {
                     items(
                         items = pruebasFiltradas,
-                        key = { it.id }
-                    ) { prueba ->
+                        key = { it.prueba.id }
+                    ) { conMediciones ->
 
-                        // Busca una prueba anterior compatible.
-                        val anterior = pruebas
-                            .filter {
-                                it.codigoEquipo == prueba.codigoEquipo &&
-                                        it.tipoEnsayo.equals(
-                                            prueba.tipoEnsayo,
-                                            ignoreCase = true
-                                        ) &&
-                                        it.unidadMedida.equals(
-                                            prueba.unidadMedida,
-                                            ignoreCase = true
-                                        ) &&
-                                        it.id != prueba.id &&
-                                        it.fechaHora < prueba.fechaHora
-                            }
-                            .maxByOrNull { it.fechaHora }
+                        val prueba = conMediciones.prueba
+                        val unidad = prueba.unidadMedida.simbolo
+
+                        // La búsqueda de la prueba anterior comparable
+                        // vive en HistorialComparacion, para poder
+                        // testearla sin levantar la pantalla.
+                        val anterior =
+                            HistorialComparacion.anteriorComparable(
+                                conMediciones,
+                                pruebas
+                            )
+
+                        val diferencia = HistorialComparacion.diferencia(
+                            conMediciones,
+                            anterior
+                        )
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -128,58 +150,65 @@ fun HistorialScreen() {
                                     Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
-                                    text = "Equipo: ${prueba.codigoEquipo}",
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = "Equipo: " + (
+                                            codigoPorEquipo[prueba.equipoId]
+                                                ?: "(equipo eliminado)"
+                                            ),
+                                    style =
+                                        MaterialTheme.typography.titleMedium
                                 )
 
                                 Text("Ubicación: ${prueba.ubicacion}")
-                                Text("Tipo de ensayo: ${prueba.tipoEnsayo}")
-                                Text("Unidad de medida: ${prueba.unidadMedida}")
-                                Text("Fecha y hora: ${prueba.fechaHora}")
-
                                 Text(
-                                    "Medición actual: ${
-                                        String.format(
-                                            Locale.US,
-                                            "%.2f",
-                                            prueba.medicion
-                                        )
-                                    } ${prueba.unidadMedida}"
+                                    "Tipo de ensayo: " +
+                                            prueba.tipoEnsayo.etiqueta
+                                )
+                                Text("Unidad de medida: $unidad")
+                                Text(
+                                    "Fecha y hora: " +
+                                            FechaFormato.formatear(
+                                                prueba.fechaHora
+                                            )
                                 )
 
-                                if (anterior != null) {
-                                    val diferencia =
-                                        prueba.medicion - anterior.medicion
+                                conMediciones.mediciones.forEach { medicion ->
+                                    Text(
+                                        "${medicion.nombre}: " +
+                                                formatear(medicion.valor) +
+                                                " $unidad"
+                                    )
+                                }
 
+                                if (anterior != null && diferencia != null) {
                                     Spacer(Modifier.height(4.dp))
 
                                     Text(
-                                        "Medición anterior: ${
-                                            String.format(
-                                                Locale.US,
-                                                "%.2f",
-                                                anterior.medicion
-                                            )
-                                        } ${anterior.unidadMedida}"
+                                        "Medición anterior: " +
+                                                formatear(
+                                                    anterior.valorPrincipal
+                                                        ?: 0.0
+                                                ) + " $unidad"
                                     )
 
                                     Text(
-                                        "Fecha anterior: ${anterior.fechaHora}"
+                                        "Fecha anterior: " +
+                                                FechaFormato.formatear(
+                                                    anterior.prueba.fechaHora
+                                                )
                                     )
 
                                     Text(
-                                        "Diferencia: ${
-                                            String.format(
-                                                Locale.US,
-                                                "%+.2f",
-                                                diferencia
-                                            )
-                                        } ${prueba.unidadMedida}"
+                                        "Diferencia: " + String.format(
+                                            Locale.US,
+                                            "%+.2f",
+                                            diferencia
+                                        ) + " $unidad"
                                     )
                                 } else {
                                     Text(
                                         "Sin mediciones anteriores " +
-                                                "del mismo equipo, ensayo y unidad."
+                                                "del mismo equipo, ensayo " +
+                                                "y unidad."
                                     )
                                 }
                             }

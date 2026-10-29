@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.model.TipoEquipo
+import com.scarlett.induztek.ui.componentes.CampoSeleccion
 import java.io.File
 import java.io.FileOutputStream
 
@@ -161,17 +163,17 @@ fun EditarEquipoScreen(
             enabled = !guardando
         )
 
-        OutlinedTextField(
-            value = tipo,
-            onValueChange = {
+        CampoSeleccion(
+            etiqueta = "Tipo de equipo",
+            textoVacio = "Selecciona el tipo de equipo",
+            opciones = TipoEquipo.entries,
+            seleccion = tipo,
+            textoDe = { it.etiqueta },
+            alSeleccionar = {
                 tipo = it
                 errorLocal = null
             },
-            label = { Text("Tipo de equipo") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = mensajeError != null && tipo.isBlank(),
-            enabled = !guardando
+            habilitado = !guardando
         )
 
         Text(
@@ -227,14 +229,14 @@ fun EditarEquipoScreen(
             onClick = {
                 errorLocal = null
 
-                if (codigo.isBlank() || tipo.isBlank()) {
+                if (codigo.isBlank()) {
                     errorLocal = "Completa todos los campos."
                 } else {
                     guardando = true
 
                     val equipoActualizado = equipo.copy(
                         codigo = codigo.trim(),
-                        tipo = tipo.trim(),
+                        tipo = tipo,
                         fotoUri = fotoUri
                     )
 

@@ -4,7 +4,11 @@ package com.scarlett.induztek.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.data.PruebaRepository
+import com.scarlett.induztek.model.Medicion
 import com.scarlett.induztek.model.Prueba
+import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.model.TipoEnsayo
+import com.scarlett.induztek.model.UnidadMedida
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,8 +19,8 @@ class PruebaViewModel(
 ) : ViewModel() {
 
     private val _pruebas =
-        MutableStateFlow<List<Prueba>>(emptyList())
-    val pruebas: StateFlow<List<Prueba>> =
+        MutableStateFlow<List<PruebaConMediciones>>(emptyList())
+    val pruebas: StateFlow<List<PruebaConMediciones>> =
         _pruebas.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
@@ -33,23 +37,33 @@ class PruebaViewModel(
         }
     }
 
-    fun insertar(
-        prueba: Prueba,
+    /*
+     * Registra una prueba con una medición. La pantalla entrega lo que
+     * el usuario eligió y escribió; el ViewModel valida, arma la
+     * entidad y guarda.
+     *
+     * La fecha se toma aquí, al guardar, y no al abrir la pantalla:
+     * antes la pantalla la calculaba una sola vez con remember, así que
+     * varias pruebas seguidas quedaban con la misma hora.
+     */
+    fun registrar(
+        equipoId: Int?,
+        ubicacion: String,
+        tipoEnsayo: TipoEnsayo?,
+        unidadMedida: UnidadMedida?,
+        medicionTexto: String,
         alResultado: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
-            val codigo = prueba.codigoEquipo.trim()
-            val ubicacion = prueba.ubicacion.trim()
-
             val errorValidacion =
-                PruebaValidacion.validarEquipo(codigo)
+                PruebaValidacion.validarEquipo(equipoId)
                     ?: PruebaValidacion.validarUbicacion(ubicacion)
-                    ?: PruebaValidacion.validarFechaHora(prueba.fechaHora)
-                    ?: if (!prueba.medicion.isFinite()) {
-                        "La medición debe ser un número válido."
-                    } else {
-                        null
-                    }
+                    ?: PruebaValidacion.validarTipoEnsayo(tipoEnsayo)
+                    ?: PruebaValidacion.validarUnidad(
+                        tipoEnsayo,
+                        unidadMedida
+                    )
+                    ?: PruebaValidacion.validarMedicion(medicionTexto)
 
             if (errorValidacion != null) {
                 _error.value = errorValidacion
@@ -58,12 +72,38 @@ class PruebaViewModel(
                 return@launch
             }
 
+            // Las validaciones de arriba ya garantizan que ninguno es
+            // null, pero el compilador no lo sabe: esto convierte los
+            // tipos nullables en no nullables.
+            val valor = PruebaValidacion.medicionDesdeTexto(medicionTexto)
+
+            if (
+                equipoId == null ||
+                tipoEnsayo == null ||
+                unidadMedida == null ||
+                valor == null
+            ) {
+                _error.value = "Revisa los datos de la prueba."
+                _guardado.value = false
+                alResultado(false)
+                return@launch
+            }
+
             try {
-                repository.insertar(
-                    prueba.copy(
-                        id = 0,
-                        codigoEquipo = codigo,
-                        ubicacion = ubicacion
+                repository.registrar(
+                    prueba = Prueba(
+                        equipoId = equipoId,
+                        fechaHora = System.currentTimeMillis(),
+                        ubicacion = ubicacion.trim(),
+                        tipoEnsayo = tipoEnsayo,
+                        unidadMedida = unidadMedida
+                    ),
+                    mediciones = listOf(
+                        Medicion(
+                            pruebaId = 0,
+                            nombre = "Medición",
+                            valor = valor
+                        )
                     )
                 )
 

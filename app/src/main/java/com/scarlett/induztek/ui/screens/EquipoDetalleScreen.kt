@@ -35,6 +35,9 @@ import java.io.File
 @Composable
 fun EquipoDetalleScreen(
     equipo: Equipo,
+    // Cuántas pruebas tiene este equipo. Se avisa en el diálogo de
+    // eliminación, porque al borrar el equipo se borran también ellas.
+    cantidadPruebas: Int,
     alVolver: () -> Unit,
     alEditar: (Equipo) -> Unit,
     alEliminar: (Equipo) -> Unit
@@ -132,7 +135,7 @@ fun EquipoDetalleScreen(
                     )
 
                     Text(
-                        text = equipo.tipo,
+                        text = equipo.tipo.etiqueta,
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -182,8 +185,28 @@ fun EquipoDetalleScreen(
             },
             text = {
                 Text(
-                    "¿Seguro que deseas eliminar el equipo " +
-                            "${equipo.codigo}? Esta acción no se puede deshacer."
+                    buildString {
+                        append("¿Seguro que deseas eliminar el equipo ")
+                        append(equipo.codigo)
+                        append("? ")
+
+                        if (cantidadPruebas > 0) {
+                            append("Este equipo tiene ")
+                            append(cantidadPruebas)
+                            append(
+                                if (cantidadPruebas == 1) {
+                                    " prueba registrada, que también se "
+                                } else {
+                                    " pruebas registradas, que también se "
+                                }
+                            )
+                            append("eliminará")
+                            if (cantidadPruebas > 1) append("n")
+                            append(". ")
+                        }
+
+                        append("Esta acción no se puede deshacer.")
+                    }
                 )
             },
             confirmButton = {

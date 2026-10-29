@@ -32,19 +32,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.scarlett.induztek.model.TipoEquipo
+import com.scarlett.induztek.ui.componentes.CampoSeleccion
 import java.io.File
 import java.io.FileOutputStream
 
 @Composable
 fun NuevoEquipoScreen(
     errorExterno: String?,
-    alGuardar: (String, String, String?, (Boolean) -> Unit) -> Unit,
+    alGuardar: (String, TipoEquipo, String?, (Boolean) -> Unit) -> Unit,
     alCancelar: () -> Unit
 ) {
     val context = LocalContext.current
 
     var codigo by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf<TipoEquipo?>(null) }
     var errorLocal by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
     var fotoUri by remember { mutableStateOf<String?>(null) }
@@ -155,19 +157,19 @@ fun NuevoEquipoScreen(
                     enabled = !guardando
                 )
 
-                OutlinedTextField(
-                    value = tipo,
-                    onValueChange = {
+                CampoSeleccion(
+                    etiqueta = "Tipo de equipo",
+                    textoVacio = "Selecciona el tipo de equipo",
+                    opciones = TipoEquipo.entries,
+                    seleccion = tipo,
+                    textoDe = { it.etiqueta },
+                    alSeleccionar = {
                         tipo = it
                         errorLocal = null
                     },
-                    label = { Text("Tipo de equipo") },
-                    placeholder = { Text("Ej. Transformador") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    isError = mensajeError != null && tipo.isBlank(),
-                    enabled = !guardando
+                    esInvalido = mensajeError != null && tipo == null,
+                    mensajeError = "Selecciona el tipo de equipo.",
+                    habilitado = !guardando
                 )
 
                 Text(
@@ -226,12 +228,18 @@ fun NuevoEquipoScreen(
                     onClick = {
                         errorLocal = null
 
-                        if (codigo.isBlank() || tipo.isBlank()) {
+                        val tipoElegido = tipo
+
+                        if (codigo.isBlank() || tipoElegido == null) {
                             errorLocal = "Completa todos los campos."
                         } else {
                             guardando = true
 
-                            alGuardar(codigo, tipo, fotoUri) { guardado ->
+                            alGuardar(
+                                codigo,
+                                tipoElegido,
+                                fotoUri
+                            ) { guardado ->
                                 guardando = false
                             }
                         }

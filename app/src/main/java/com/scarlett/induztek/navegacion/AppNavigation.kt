@@ -128,8 +128,16 @@ fun AppNavigation() {
                 val equipo = equipos.find { it.id == id }
 
                 if (equipo != null) {
+                    // La cantidad de pruebas se observa aparte y no se
+                    // guarda en el equipo: cambia cada vez que se
+                    // registra una prueba.
+                    val cantidadPruebas by remember(equipo.id) {
+                        equipoViewModel.cantidadPruebas(equipo.id)
+                    }.collectAsState(initial = 0)
+
                     EquipoDetalleScreen(
                         equipo = equipo,
+                        cantidadPruebas = cantidadPruebas,
                         alVolver = {
                             navController.popBackStack()
                         },

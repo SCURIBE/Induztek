@@ -235,7 +235,7 @@ fun EquiposScreen(
                                         )
 
                                         Text(
-                                            text = equipo.tipo,
+                                            text = equipo.tipo.etiqueta,
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

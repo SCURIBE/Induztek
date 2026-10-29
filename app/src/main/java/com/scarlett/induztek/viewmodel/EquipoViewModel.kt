@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.data.EquipoRepository
 import com.scarlett.induztek.model.Equipo
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,16 +29,23 @@ class EquipoViewModel(
         }
     }
 
+    // Cuántas pruebas tiene un equipo. La usa el diálogo de eliminación
+    // para avisar cuántas se van a borrar en cascada.
+    fun cantidadPruebas(equipoId: Int): Flow<Int> {
+        return repository.observarCantidadPruebas(equipoId)
+    }
+
     fun insertar(
         equipo: Equipo,
         alResultado: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
             val codigo = equipo.codigo.trim()
-            val tipo = equipo.tipo.trim()
 
-            if (codigo.isBlank() || tipo.isBlank()) {
-                _error.value = "Completa todos los campos."
+            // El tipo ya no se valida: es un enum elegido de una lista,
+            // así que no puede venir vacío ni mal escrito.
+            if (codigo.isBlank()) {
+                _error.value = "Ingresa el código del equipo."
                 alResultado(false)
                 return@launch
             }
@@ -48,12 +56,7 @@ class EquipoViewModel(
                 return@launch
             }
 
-            repository.insertar(
-                equipo.copy(
-                    codigo = codigo,
-                    tipo = tipo
-                )
-            )
+            repository.insertar(equipo.copy(codigo = codigo))
 
             _error.value = null
             alResultado(true)
@@ -66,10 +69,9 @@ class EquipoViewModel(
     ) {
         viewModelScope.launch {
             val codigo = equipo.codigo.trim()
-            val tipo = equipo.tipo.trim()
 
-            if (codigo.isBlank() || tipo.isBlank()) {
-                _error.value = "Completa todos los campos."
+            if (codigo.isBlank()) {
+                _error.value = "Ingresa el código del equipo."
                 alResultado(false)
                 return@launch
             }
@@ -85,12 +87,7 @@ class EquipoViewModel(
                 return@launch
             }
 
-            repository.actualizar(
-                equipo.copy(
-                    codigo = codigo,
-                    tipo = tipo
-                )
-            )
+            repository.actualizar(equipo.copy(codigo = codigo))
 
             _error.value = null
             alResultado(true)
