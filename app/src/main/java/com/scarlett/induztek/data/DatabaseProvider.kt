@@ -12,16 +12,16 @@ object DatabaseProvider {
     private var INSTANCE: AppDatabase? = null
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 "ALTER TABLE equipos ADD COLUMN fotoUri TEXT"
             )
         }
     }
 
     private val MIGRATION_2_3 = object : Migration(2, 3) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 """
                 CREATE TABLE IF NOT EXISTS pruebas_nueva (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -33,7 +33,7 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 INSERT INTO pruebas_nueva (
                     id, codigoEquipo, fechaHora, ubicacion, medicion
@@ -44,23 +44,23 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL("DROP TABLE pruebas")
-            database.execSQL(
+            db.execSQL("DROP TABLE pruebas")
+            db.execSQL(
                 "ALTER TABLE pruebas_nueva RENAME TO pruebas"
             )
         }
     }
 
     private val MIGRATION_3_4 = object : Migration(3, 4) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 """
                 ALTER TABLE pruebas
                 ADD COLUMN tipoEnsayo TEXT NOT NULL DEFAULT 'General'
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 ALTER TABLE pruebas
                 ADD COLUMN unidadMedida TEXT NOT NULL DEFAULT 'Sin especificar'
@@ -88,13 +88,13 @@ object DatabaseProvider {
      * foránea, así que las dos tablas se recrean y se copian los datos.
      */
     private val MIGRATION_4_5 = object : Migration(4, 5) {
-        override fun migrate(database: SupportSQLiteDatabase) {
+        override fun migrate(db: SupportSQLiteDatabase) {
 
             // 1. La medición de cada prueba se guarda aparte antes de
             // rehacer la tabla, porque la tabla mediciones todavía no
             // puede existir: su clave foránea apunta a la tabla pruebas
             // definitiva, que se crea más abajo.
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE TABLE medicion_origen (
                     pruebaId INTEGER NOT NULL,
@@ -103,7 +103,7 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 INSERT INTO medicion_origen (pruebaId, valor)
                 SELECT id, medicion FROM pruebas
@@ -114,7 +114,7 @@ object DatabaseProvider {
             // de la constante del enum. LIKE en SQLite no distingue
             // mayúsculas, así que "Transformador" y "TRANSFORMADOR"
             // caen en el mismo caso.
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE TABLE equipos_nueva (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -125,7 +125,7 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 INSERT INTO equipos_nueva (id, tipo, codigo, fotoUri)
                 SELECT
@@ -147,8 +147,8 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL("DROP TABLE equipos")
-            database.execSQL(
+            db.execSQL("DROP TABLE equipos")
+            db.execSQL(
                 "ALTER TABLE equipos_nueva RENAME TO equipos"
             )
 
@@ -156,7 +156,7 @@ object DatabaseProvider {
             // Las columnas de la visita no llevan DEFAULT en SQL porque
             // la entidad tampoco lo declara con @ColumnInfo; si no
             // coincidieran, Room rechazaría la migración al abrir.
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE TABLE pruebas_nueva (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -182,7 +182,7 @@ object DatabaseProvider {
             // strftime con el modificador 'utc' interpreta el texto como
             // hora local del dispositivo y devuelve segundos desde la
             // época; por eso se multiplica por 1000.
-            database.execSQL(
+            db.execSQL(
                 """
                 INSERT INTO pruebas_nueva (
                     id, equipoId, fechaHora, ubicacion,
@@ -242,14 +242,14 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL("DROP TABLE pruebas")
-            database.execSQL(
+            db.execSQL("DROP TABLE pruebas")
+            db.execSQL(
                 "ALTER TABLE pruebas_nueva RENAME TO pruebas"
             )
 
             // El nombre del índice tiene que ser el que genera Room a
             // partir de @Index("equipoId"), o la validación falla.
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE INDEX IF NOT EXISTS index_pruebas_equipoId
                 ON pruebas (equipoId)
@@ -258,7 +258,7 @@ object DatabaseProvider {
 
             // 4. Mediciones: una fila por cada medición que antes era
             // una columna de la prueba.
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE TABLE mediciones (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -273,14 +273,14 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE INDEX IF NOT EXISTS index_mediciones_pruebaId
                 ON mediciones (pruebaId)
                 """.trimIndent()
             )
 
-            database.execSQL(
+            db.execSQL(
                 """
                 INSERT INTO mediciones (pruebaId, nombre, valor)
                 SELECT o.pruebaId, 'Medición', o.valor
@@ -291,9 +291,43 @@ object DatabaseProvider {
                 """.trimIndent()
             )
 
-            database.execSQL("DROP TABLE medicion_origen")
+            db.execSQL("DROP TABLE medicion_origen")
         }
     }
+
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+            CREATE TABLE usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                nombreUsuario TEXT NOT NULL,
+                nombreCompleto TEXT NOT NULL,
+                credencial TEXT NOT NULL,
+                creadoEn INTEGER NOT NULL
+            )
+            """.trimIndent()
+            )
+
+            db.execSQL(
+                """
+            CREATE UNIQUE INDEX IF NOT EXISTS index_usuarios_nombreUsuario
+            ON usuarios (nombreUsuario)
+            """.trimIndent()
+            )
+        }
+    }
+
+    // Todas las migraciones en orden. Es internal y no private para que
+    // el test de migraciones abra una base vieja con exactamente las
+    // mismas que usa la app.
+    internal val MIGRACIONES = arrayOf(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6
+    )
 
     fun obtenerBaseDatos(context: Context): AppDatabase {
         return INSTANCE ?: synchronized(this) {
@@ -302,12 +336,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "induztek_db"
             )
-                .addMigrations(
-                    MIGRATION_1_2,
-                    MIGRATION_2_3,
-                    MIGRATION_3_4,
-                    MIGRATION_4_5
-                )
+                .addMigrations(*MIGRACIONES)
                 .build()
                 .also { INSTANCE = it }
         }

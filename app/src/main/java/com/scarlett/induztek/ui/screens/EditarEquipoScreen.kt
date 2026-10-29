@@ -1,35 +1,24 @@
 package com.scarlett.induztek.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.scarlett.induztek.model.Equipo
 import com.scarlett.induztek.model.TipoEquipo
 import com.scarlett.induztek.ui.componentes.CampoSeleccion
+import com.scarlett.induztek.ui.componentes.SelectorFoto
 import com.scarlett.induztek.util.AlmacenFotos
 
 @Composable
@@ -39,22 +28,19 @@ fun EditarEquipoScreen(
     alGuardar: (Equipo, (Boolean) -> Unit) -> Unit,
     alCancelar: () -> Unit
 ) {
-    val context = LocalContext.current
-
-    var codigo by remember(equipo.id) {
+    // rememberSaveable en lo que escribe el usuario: mientras la cámara
+    // está abierta, Android puede destruir esta pantalla, y al volver el
+    // formulario tiene que seguir lleno.
+    var codigo by rememberSaveable(equipo.id) {
         mutableStateOf(equipo.codigo)
     }
 
-    var tipo by remember(equipo.id) {
+    var tipo by rememberSaveable(equipo.id) {
         mutableStateOf(equipo.tipo)
     }
 
-    var fotoUri by remember(equipo.id) {
+    var fotoUri by rememberSaveable(equipo.id) {
         mutableStateOf(equipo.fotoUri)
-    }
-
-    var foto by remember(equipo.id) {
-        mutableStateOf(AlmacenFotos.leer(equipo.fotoUri))
     }
 
     var errorLocal by remember {
@@ -67,39 +53,12 @@ fun EditarEquipoScreen(
 
     val mensajeError = errorExterno ?: errorLocal
 
-    val galeria = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            try {
-                val bitmap = context.contentResolver
-                    .openInputStream(uri)
-                    ?.use { BitmapFactory.decodeStream(it) }
-
-                if (bitmap != null) {
-                    fotoUri = AlmacenFotos.guardar(context, bitmap)
-                    foto = bitmap
-                    errorLocal = null
-                } else {
-                    errorLocal = "No se pudo cargar la imagen."
-                }
-            } catch (_: Exception) {
-                errorLocal = "No se pudo abrir la imagen seleccionada."
-            }
-        }
-    }
-
-    val camara = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            try {
-                fotoUri = AlmacenFotos.guardar(context, bitmap)
-                foto = bitmap
-                errorLocal = null
-            } catch (_: Exception) {
-                errorLocal = "No se pudo guardar la fotografía."
-            }
+    // Una foto tomada en este formulario y todavía sin guardar. La
+    // original del equipo no se toca aquí: la borra el ViewModel, y solo
+    // después de guardar el cambio.
+    fun descartarFotoNueva() {
+        if (fotoUri != equipo.fotoUri) {
+            AlmacenFotos.borrar(fotoUri)
         }
     }
 
@@ -151,41 +110,19 @@ fun EditarEquipoScreen(
             style = MaterialTheme.typography.titleMedium
         )
 
-        if (foto != null) {
-            Image(
-                bitmap = foto!!.asImageBitmap(),
-                contentDescription = "Fotografía del equipo",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-            )
-        } else {
-            Text("Este equipo no tiene fotografía.")
-        }
-
-        OutlinedButton(
-            onClick = { camara.launch(null) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !guardando
-        ) {
-            Icon(
-                Icons.Default.CameraAlt,
-                contentDescription = null
-            )
-            Text("  Tomar nueva fotografía")
-        }
-
-        OutlinedButton(
-            onClick = { galeria.launch("image/*") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !guardando
-        ) {
-            Icon(
-                Icons.Default.Image,
-                contentDescription = null
-            )
-            Text("  Cambiar desde galería")
-        }
+        SelectorFoto(
+            fotoUri = fotoUri,
+            alCambiar = { nueva ->
+                descartarFotoNueva()
+                fotoUri = nueva
+                errorLocal = null
+            },
+            alError = { errorLocal = it },
+            habilitado = !guardando,
+            textoCamara = "Tomar nueva fotografía",
+            textoGaleria = "Cambiar desde galería",
+            textoSinFoto = "Este equipo no tiene fotografía."
+        )
 
         mensajeError?.let { mensaje ->
             Text(
@@ -224,7 +161,10 @@ fun EditarEquipoScreen(
         }
 
         OutlinedButton(
-            onClick = alCancelar,
+            onClick = {
+                descartarFotoNueva()
+                alCancelar()
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = !guardando,
             shape = RoundedCornerShape(14.dp)

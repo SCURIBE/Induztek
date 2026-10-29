@@ -2,9 +2,12 @@
 package com.scarlett.induztek.navegacion
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -19,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.scarlett.induztek.data.RepositoryProvider
+import com.scarlett.induztek.model.Usuario
 import com.scarlett.induztek.ui.screens.EditarEquipoScreen
 import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
 import com.scarlett.induztek.ui.screens.EquiposScreen
@@ -36,7 +40,10 @@ import androidx.navigation.navArgument
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    usuario: Usuario,
+    alCerrarSesion: () -> Unit
+) {
     val navController = rememberNavController()
 
     val entradaActual by navController.currentBackStackEntryAsState()
@@ -59,7 +66,15 @@ fun AppNavigation() {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(tituloActual) }
+                title = { Text(tituloActual) },
+                actions = {
+                    IconButton(onClick = alCerrarSesion) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Cerrar sesión"
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
@@ -218,7 +233,9 @@ fun AppNavigation() {
             }
 
             composable(Rutas.NuevaPrueba.ruta) {
-                NuevaPruebaScreen()
+                NuevaPruebaScreen(
+                    tecnicoInicial = usuario.nombreCompleto
+                )
             }
 
             composable(Rutas.Historial.ruta) {
@@ -233,8 +250,3 @@ fun AppNavigation() {
         }
     }
 }
-
-/*
- * Adaptador para collectAsState sin cambiar el resto de la navegación.
- */
-

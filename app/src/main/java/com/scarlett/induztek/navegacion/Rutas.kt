@@ -18,6 +18,11 @@ sealed class Rutas(val ruta: String, val titulo: String, val icono: ImageVector)
     companion object {
         // Lista que recorrerá la NavigationBar para dibujar cada ítem
         val barraInferior = listOf(Equipos, NuevaPrueba, Historial)
+        // Las dos rutas del grafo de autenticación, que vive aparte
+        // del NavHost principal.
+        const val LOGIN = "login"
+        const val REGISTRO = "registro"
+
         const val ARG_ID = "id"
         const val EQUIPO_DETALLE = "equipo_detalle/{$ARG_ID}"
         const val EQUIPO_EDITAR = "equipo_editar/{$ARG_ID}"

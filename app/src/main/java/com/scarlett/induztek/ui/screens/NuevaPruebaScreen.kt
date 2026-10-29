@@ -72,7 +72,7 @@ private data class FilaMedicion(
 }
 
 @Composable
-fun NuevaPruebaScreen() {
+fun NuevaPruebaScreen(tecnicoInicial: String = "") {
     val context = LocalContext.current
 
     val pruebaRepository = remember {
@@ -99,7 +99,7 @@ fun NuevaPruebaScreen() {
     var tipoEnsayo by remember { mutableStateOf<TipoEnsayo?>(null) }
     var unidadMedida by remember { mutableStateOf<UnidadMedida?>(null) }
     var cliente by remember { mutableStateOf("") }
-    var tecnico by remember { mutableStateOf("") }
+    var tecnico by remember { mutableStateOf(tecnicoInicial) }
     var observaciones by remember { mutableStateOf("") }
     var intentoGuardar by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
@@ -544,7 +544,7 @@ fun NuevaPruebaScreen() {
                             tipoEnsayo = null
                             unidadMedida = null
                             cliente = ""
-                            tecnico = ""
+                            tecnico = tecnicoInicial
                             observaciones = ""
                             filas = listOf(
                                 FilaMedicion(

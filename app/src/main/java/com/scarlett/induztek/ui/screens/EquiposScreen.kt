@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,10 @@ fun EquiposScreen(
     val equipos by viewModel.equipos.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    var mostrarFormulario by remember {
+    // rememberSaveable: si Android destruye la pantalla mientras la
+    // cámara está abierta, al volver tiene que seguir el formulario, no
+    // la lista. Si no, la foto recién tomada no llega a ningún lado.
+    var mostrarFormulario by rememberSaveable {
         mutableStateOf(false)
     }
 
@@ -198,7 +202,10 @@ fun EquiposScreen(
                                         Arrangement.spacedBy(14.dp)
                                 ) {
                                     val miniatura = remember(equipo.fotoUri) {
-                                        AlmacenFotos.leer(equipo.fotoUri)
+                                        AlmacenFotos.leer(
+                                            equipo.fotoUri,
+                                            AlmacenFotos.LADO_MINIATURA
+                                        )
                                     }
 
                                     if (miniatura != null) {

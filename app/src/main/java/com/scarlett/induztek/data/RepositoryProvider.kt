@@ -14,4 +14,9 @@ object RepositoryProvider {
         val baseDatos = DatabaseProvider.obtenerBaseDatos(context)
         return EquipoRepository(baseDatos.equipoDao())
     }
+
+    fun obtenerUsuarioRepository(context: Context): UsuarioRepository {
+        val baseDatos = DatabaseProvider.obtenerBaseDatos(context)
+        return UsuarioRepository(baseDatos.usuarioDao())
+    }
 }

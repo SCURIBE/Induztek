@@ -34,4 +34,12 @@ class EquipoRepository(
     suspend fun eliminarPorId(id: Int) {
         equipoDao.eliminarPorId(id)
     }
+
+    suspend fun buscarPorId(id: Int): Equipo? {
+        return equipoDao.buscarPorId(id)
+    }
+
+    suspend fun rutasDeFotos(): List<String> {
+        return equipoDao.rutasDeFotos()
+    }
 }

@@ -5,13 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.data.EquipoRepository
 import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.util.AlmacenFotos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class EquipoViewModel(
-    private val repository: EquipoRepository
+    private val repository: EquipoRepository,
+    // Borrar la foto se recibe como parámetro para que los tests puedan
+    // comprobar qué archivo se borra sin tocar archivos de verdad.
+    private val borrarFoto: (String?) -> Unit = { AlmacenFotos.borrar(it) }
 ) : ViewModel() {
 
     private val _equipos = MutableStateFlow<List<Equipo>>(emptyList())
@@ -80,7 +84,15 @@ class EquipoViewModel(
                 return@launch
             }
 
+            val anterior = repository.buscarPorId(equipo.id)
+
             repository.actualizar(equipo.copy(codigo = codigo))
+
+            // La foto reemplazada se borra solo después de guardar: si el
+            // update fallara, el equipo seguiría apuntando a ella.
+            if (anterior != null && anterior.fotoUri != equipo.fotoUri) {
+                borrarFoto(anterior.fotoUri)
+            }
 
             _error.value = null
             alResultado(true)
@@ -89,7 +101,14 @@ class EquipoViewModel(
 
     fun eliminar(id: Int) {
         viewModelScope.launch {
+            // Se lee antes de borrar, porque después ya no se sabe cuál
+            // era su foto. La cascada de la base borra sus pruebas, pero
+            // el archivo de la foto no está en la base: hay que borrarlo
+            // aparte.
+            val equipo = repository.buscarPorId(id)
+
             repository.eliminarPorId(id)
+            borrarFoto(equipo?.fotoUri)
         }
     }
 

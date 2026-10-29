@@ -36,4 +36,11 @@ interface EquipoDao {
 
     @Query("DELETE FROM equipos WHERE id = :id")
     suspend fun eliminarPorId(id: Int)
+
+    @Query("SELECT * FROM equipos WHERE id = :id")
+    suspend fun buscarPorId(id: Int): Equipo?
+
+    // Las fotos que algún equipo usa. Sirve para borrar las huérfanas.
+    @Query("SELECT fotoUri FROM equipos WHERE fotoUri IS NOT NULL")
+    suspend fun rutasDeFotos(): List<String>
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Carpetas que el FileProvider puede entregar a otras apps.
+    Solo estas dos: el resto del almacenamiento de la app queda privado.
+-->
+<paths>
+    <!-- La app de cámara escribe aquí la foto del equipo (TakePicture). -->
+    <files-path
+        name="evidencias"
+        path="evidencias/" />
+
+    <!-- Los PDF del protocolo se generan en caché: el sistema los puede
+         borrar cuando necesite espacio, y siempre se pueden regenerar. -->
+    <cache-path
+        name="protocolos"
+        path="protocolos/" />
+</paths>

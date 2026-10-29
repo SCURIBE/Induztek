@@ -1,39 +1,28 @@
 package com.scarlett.induztek.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.scarlett.induztek.model.TipoEquipo
 import com.scarlett.induztek.ui.componentes.CampoSeleccion
+import com.scarlett.induztek.ui.componentes.SelectorFoto
 import com.scarlett.induztek.util.AlmacenFotos
 
 @Composable
@@ -42,52 +31,16 @@ fun NuevoEquipoScreen(
     alGuardar: (String, TipoEquipo, String?, (Boolean) -> Unit) -> Unit,
     alCancelar: () -> Unit
 ) {
-    val context = LocalContext.current
-
-    var codigo by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf<TipoEquipo?>(null) }
+    // rememberSaveable en lo que escribe el usuario: mientras la cámara
+    // está abierta, Android puede destruir esta pantalla, y al volver el
+    // formulario tiene que seguir lleno.
+    var codigo by rememberSaveable { mutableStateOf("") }
+    var tipo by rememberSaveable { mutableStateOf<TipoEquipo?>(null) }
+    var fotoUri by rememberSaveable { mutableStateOf<String?>(null) }
     var errorLocal by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
-    var fotoUri by remember { mutableStateOf<String?>(null) }
-    var foto by remember { mutableStateOf<Bitmap?>(null) }
 
     val mensajeError = errorExterno ?: errorLocal
-
-    val galeria = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            try {
-                val bitmap = context.contentResolver
-                    .openInputStream(uri)
-                    ?.use { BitmapFactory.decodeStream(it) }
-
-                if (bitmap != null) {
-                    fotoUri = AlmacenFotos.guardar(context, bitmap)
-                    foto = bitmap
-                    errorLocal = null
-                } else {
-                    errorLocal = "No se pudo cargar la imagen."
-                }
-            } catch (e: Exception) {
-                errorLocal = "No se pudo abrir la imagen seleccionada."
-            }
-        }
-    }
-
-    val camara = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            try {
-                fotoUri = AlmacenFotos.guardar(context, bitmap)
-                foto = bitmap
-                errorLocal = null
-            } catch (e: Exception) {
-                errorLocal = "No se pudo guardar la fotografía."
-            }
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -157,44 +110,19 @@ fun NuevoEquipoScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                if (foto != null) {
-                    Image(
-                        bitmap = foto!!.asImageBitmap(),
-                        contentDescription = "Fotografía del equipo",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                    )
-
-                    Text(
-                        text = "Fotografía seleccionada",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                OutlinedButton(
-                    onClick = { camara.launch(null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !guardando
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = null
-                    )
-                    Text("  Tomar fotografía")
-                }
-
-                OutlinedButton(
-                    onClick = { galeria.launch("image/*") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !guardando
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = null
-                    )
-                    Text("  Elegir de galería")
-                }
+                SelectorFoto(
+                    fotoUri = fotoUri,
+                    alCambiar = { nueva ->
+                        // La foto anterior de este formulario todavía no
+                        // pertenece a ningún equipo: si se reemplaza, se
+                        // borra para no dejarla huérfana.
+                        AlmacenFotos.borrar(fotoUri)
+                        fotoUri = nueva
+                        errorLocal = null
+                    },
+                    alError = { errorLocal = it },
+                    habilitado = !guardando
+                )
 
                 mensajeError?.let { mensaje ->
                     Text(
@@ -233,7 +161,11 @@ fun NuevoEquipoScreen(
                 }
 
                 OutlinedButton(
-                    onClick = alCancelar,
+                    onClick = {
+                        // Si se cancela, la foto tomada no la usa nadie.
+                        AlmacenFotos.borrar(fotoUri)
+                        alCancelar()
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !guardando
                 ) {
