@@ -2,9 +2,9 @@ package com.scarlett.induztek.viewmodel
 
 import com.scarlett.induztek.falsos.medicion
 import com.scarlett.induztek.falsos.pruebaCon
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.ResultadoMedicion
-import com.scarlett.induztek.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.ResultadoMedicion
+import com.scarlett.induztek.Repository.model.TipoEquipo
 import com.scarlett.induztek.util.FechaFormato
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

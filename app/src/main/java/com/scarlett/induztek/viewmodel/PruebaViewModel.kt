@@ -3,11 +3,11 @@ package com.scarlett.induztek.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scarlett.induztek.data.PruebaRepository
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.PruebaConMediciones
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.data.PruebaRepository
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

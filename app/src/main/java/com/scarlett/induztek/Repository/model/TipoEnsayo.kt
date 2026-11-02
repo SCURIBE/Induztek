@@ -1,4 +1,4 @@
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 // Ensayos del protocolo de pruebas eléctricas.
 //

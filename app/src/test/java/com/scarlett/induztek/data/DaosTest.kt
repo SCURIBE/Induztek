@@ -2,13 +2,14 @@ package com.scarlett.induztek.data
 
 import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.TipoEquipo
-import com.scarlett.induztek.model.UnidadMedida
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.data.AppDatabase
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.UnidadMedida
+import com.scarlett.induztek.Repository.model.Usuario
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After

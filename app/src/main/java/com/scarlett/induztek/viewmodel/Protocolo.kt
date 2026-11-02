@@ -1,9 +1,9 @@
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.PruebaConMediciones
-import com.scarlett.induztek.model.ResultadoMedicion
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.ResultadoMedicion
 import com.scarlett.induztek.util.FechaFormato
 import java.text.Normalizer
 import java.util.Locale

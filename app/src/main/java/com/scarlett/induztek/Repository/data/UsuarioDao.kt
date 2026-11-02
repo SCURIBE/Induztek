@@ -1,9 +1,9 @@
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.model.Usuario
 
 @Dao
 interface UsuarioDao {

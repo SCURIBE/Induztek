@@ -3,8 +3,8 @@ package com.scarlett.induztek.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scarlett.induztek.data.EquipoRepository
-import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.Repository.data.EquipoRepository
+import com.scarlett.induztek.Repository.model.Equipo
 import com.scarlett.induztek.util.AlmacenFotos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,9 +1,9 @@
 package com.scarlett.induztek.falsos
 
-import com.scarlett.induztek.data.PruebaDao
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.data.PruebaDao
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine

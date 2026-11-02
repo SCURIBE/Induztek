@@ -1,7 +1,7 @@
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

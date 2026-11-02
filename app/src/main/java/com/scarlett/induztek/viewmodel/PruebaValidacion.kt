@@ -1,9 +1,9 @@
 
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 
 // Una medición tal como la escribió el usuario, todavía como texto.
 // El rango es opcional: si queda vacío, la medición no se evalúa.

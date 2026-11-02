@@ -3,9 +3,9 @@ package com.scarlett.induztek.viewmodel
 import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scarlett.induztek.data.AlmacenSesion
-import com.scarlett.induztek.data.UsuarioRepository
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.data.AlmacenSesion
+import com.scarlett.induztek.Repository.data.UsuarioRepository
+import com.scarlett.induztek.Repository.model.Usuario
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

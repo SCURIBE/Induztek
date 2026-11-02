@@ -1,4 +1,4 @@
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 // Resultado de comparar una medición con su rango aceptable.
 // No se guarda en la base de datos: se deduce del valor y del rango

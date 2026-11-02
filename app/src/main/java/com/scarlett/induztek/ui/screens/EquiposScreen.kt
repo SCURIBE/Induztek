@@ -37,8 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.scarlett.induztek.data.RepositoryProvider
-import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.Repository.data.RepositoryProvider
+import com.scarlett.induztek.Repository.model.Equipo
 import com.scarlett.induztek.util.AlmacenFotos
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory

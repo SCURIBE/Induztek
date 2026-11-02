@@ -10,8 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.scarlett.induztek.data.RepositoryProvider
-import com.scarlett.induztek.data.SesionStore
+import com.scarlett.induztek.Repository.data.RepositoryProvider
+import com.scarlett.induztek.Repository.data.SesionStore
 import com.scarlett.induztek.navegacion.AppNavigation
 import com.scarlett.induztek.navegacion.AutenticacionNavigation
 import com.scarlett.induztek.ui.componentes.PantallaCargando

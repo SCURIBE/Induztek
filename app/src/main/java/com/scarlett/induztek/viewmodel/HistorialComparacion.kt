@@ -1,8 +1,8 @@
 
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
 
 // Una medición de la prueba actual junto con la del mismo punto en la
 // prueba anterior comparable, si existe.

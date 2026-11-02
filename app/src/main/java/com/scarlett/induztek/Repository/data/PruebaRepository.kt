@@ -1,9 +1,8 @@
+package com.scarlett.induztek.Repository.data
 
-package com.scarlett.induztek.data
-
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
 import kotlinx.coroutines.flow.Flow
 
 class PruebaRepository(

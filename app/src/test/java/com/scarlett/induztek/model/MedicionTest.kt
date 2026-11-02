@@ -1,5 +1,6 @@
 package com.scarlett.induztek.model
 
+import com.scarlett.induztek.Repository.model.ResultadoMedicion
 import com.scarlett.induztek.falsos.medicion
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -21,8 +21,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.scarlett.induztek.data.RepositoryProvider
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.data.RepositoryProvider
+import com.scarlett.induztek.Repository.model.Usuario
 import com.scarlett.induztek.ui.screens.EditarEquipoScreen
 import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
 import com.scarlett.induztek.ui.screens.EquiposScreen

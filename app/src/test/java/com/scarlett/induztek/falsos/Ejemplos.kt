@@ -1,10 +1,10 @@
 package com.scarlett.induztek.falsos
 
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.PruebaConMediciones
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 
 // Atajos para armar datos de prueba sin repetir todos los campos en
 // cada test. Solo se escribe lo que importa para el caso.

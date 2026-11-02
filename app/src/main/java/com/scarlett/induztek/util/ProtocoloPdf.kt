@@ -14,7 +14,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.core.graphics.withClip
 import androidx.core.graphics.withTranslation
-import com.scarlett.induztek.model.ResultadoMedicion
+import com.scarlett.induztek.Repository.model.ResultadoMedicion
 import com.scarlett.induztek.viewmodel.FilaProtocolo
 import com.scarlett.induztek.viewmodel.ProtocoloContenido
 import java.io.File

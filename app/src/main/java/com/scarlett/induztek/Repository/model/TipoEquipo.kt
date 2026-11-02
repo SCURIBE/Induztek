@@ -1,4 +1,4 @@
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 // Lista fija de tipos de equipo. Antes era texto libre, así que dos
 // equipos podían quedar como "Transformador" y "transformador " y no

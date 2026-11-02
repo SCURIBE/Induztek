@@ -1,7 +1,7 @@
 package com.scarlett.induztek.falsos
 
-import com.scarlett.induztek.data.EquipoDao
-import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.Repository.data.EquipoDao
+import com.scarlett.induztek.Repository.model.Equipo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map

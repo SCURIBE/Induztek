@@ -1,10 +1,10 @@
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.data.EquipoRepository
+import com.scarlett.induztek.Repository.data.EquipoRepository
 import com.scarlett.induztek.falsos.EquipoDaoFalso
 import com.scarlett.induztek.falsos.ReglaDespachadorPrincipal
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.TipoEquipo
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

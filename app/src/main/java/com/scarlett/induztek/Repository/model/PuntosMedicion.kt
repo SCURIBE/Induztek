@@ -1,4 +1,4 @@
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 /*
  * Puntos donde se toma una medición dentro de un mismo ensayo: las tres

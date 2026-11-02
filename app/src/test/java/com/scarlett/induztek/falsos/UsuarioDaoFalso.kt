@@ -1,7 +1,7 @@
 package com.scarlett.induztek.falsos
 
-import com.scarlett.induztek.data.UsuarioDao
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.data.UsuarioDao
+import com.scarlett.induztek.Repository.model.Usuario
 
 // UsuarioDao en memoria.
 class UsuarioDaoFalso(iniciales: List<Usuario> = emptyList()) : UsuarioDao {

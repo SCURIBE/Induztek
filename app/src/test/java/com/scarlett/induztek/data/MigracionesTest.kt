@@ -3,9 +3,11 @@ package com.scarlett.induztek.data
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.TipoEquipo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.data.AppDatabase
+import com.scarlett.induztek.Repository.data.DatabaseProvider
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After

@@ -2,8 +2,8 @@ package com.scarlett.induztek.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.scarlett.induztek.data.AlmacenSesion
-import com.scarlett.induztek.data.UsuarioRepository
+import com.scarlett.induztek.Repository.data.AlmacenSesion
+import com.scarlett.induztek.Repository.data.UsuarioRepository
 
 class AuthViewModelFactory(
     private val repository: UsuarioRepository,

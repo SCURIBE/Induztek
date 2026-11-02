@@ -1,4 +1,4 @@
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
 import kotlinx.coroutines.flow.Flow
 

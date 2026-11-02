@@ -1,6 +1,6 @@
 package com.scarlett.induztek.falsos
 
-import com.scarlett.induztek.data.AlmacenSesion
+import com.scarlett.induztek.Repository.data.AlmacenSesion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

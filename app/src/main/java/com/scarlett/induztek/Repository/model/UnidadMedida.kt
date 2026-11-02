@@ -1,4 +1,4 @@
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 // Unidades en que se puede expresar una medición.
 // El símbolo es lo que se muestra; el nombre de la constante es lo que

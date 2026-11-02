@@ -1,10 +1,10 @@
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.data.UsuarioRepository
+import com.scarlett.induztek.Repository.data.UsuarioRepository
 import com.scarlett.induztek.falsos.ReglaDespachadorPrincipal
 import com.scarlett.induztek.falsos.SesionFalsa
 import com.scarlett.induztek.falsos.UsuarioDaoFalso
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.model.Usuario
 import com.scarlett.induztek.util.Hash
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

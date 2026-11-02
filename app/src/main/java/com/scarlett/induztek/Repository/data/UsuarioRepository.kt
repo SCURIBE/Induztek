@@ -1,6 +1,6 @@
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.model.Usuario
 import com.scarlett.induztek.util.Hash
 
 class UsuarioRepository(

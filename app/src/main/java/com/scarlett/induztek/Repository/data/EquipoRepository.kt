@@ -1,7 +1,6 @@
+package com.scarlett.induztek.Repository.data
 
-package com.scarlett.induztek.data
-
-import com.scarlett.induztek.model.Equipo
+import com.scarlett.induztek.Repository.model.Equipo
 import kotlinx.coroutines.flow.Flow
 
 class EquipoRepository(

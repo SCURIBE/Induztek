@@ -12,8 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.scarlett.induztek.model.PruebaConMediciones
-import com.scarlett.induztek.model.ResultadoMedicion
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.ResultadoMedicion
 import com.scarlett.induztek.util.FechaFormato
 import com.scarlett.induztek.viewmodel.HistorialComparacion
 import java.util.Locale

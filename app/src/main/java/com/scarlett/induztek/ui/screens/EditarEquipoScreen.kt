@@ -15,8 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.TipoEquipo
 import com.scarlett.induztek.ui.componentes.CampoSeleccion
 import com.scarlett.induztek.ui.componentes.SelectorFoto
 import com.scarlett.induztek.util.AlmacenFotos

@@ -1,12 +1,11 @@
-
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.scarlett.induztek.model.Equipo
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.Usuario
+import com.scarlett.induztek.Repository.model.Equipo
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.Usuario
 
 @Database(
     entities = [Equipo::class, Prueba::class, Medicion::class, Usuario::class],

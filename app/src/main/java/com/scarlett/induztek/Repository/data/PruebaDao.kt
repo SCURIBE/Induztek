@@ -1,13 +1,12 @@
-
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
-import com.scarlett.induztek.model.Medicion
-import com.scarlett.induztek.model.Prueba
-import com.scarlett.induztek.model.PruebaConMediciones
+import com.scarlett.induztek.Repository.model.Medicion
+import com.scarlett.induztek.Repository.model.Prueba
+import com.scarlett.induztek.Repository.model.PruebaConMediciones
 import kotlinx.coroutines.flow.Flow
 
 @Dao

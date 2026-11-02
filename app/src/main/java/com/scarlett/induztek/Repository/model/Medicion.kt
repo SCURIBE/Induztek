@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.model
+package com.scarlett.induztek.Repository.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

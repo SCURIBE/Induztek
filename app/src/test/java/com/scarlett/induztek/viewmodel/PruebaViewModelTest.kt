@@ -1,10 +1,10 @@
 package com.scarlett.induztek.viewmodel
 
-import com.scarlett.induztek.data.PruebaRepository
+import com.scarlett.induztek.Repository.data.PruebaRepository
 import com.scarlett.induztek.falsos.PruebaDaoFalso
 import com.scarlett.induztek.falsos.ReglaDespachadorPrincipal
-import com.scarlett.induztek.model.TipoEnsayo
-import com.scarlett.induztek.model.UnidadMedida
+import com.scarlett.induztek.Repository.model.TipoEnsayo
+import com.scarlett.induztek.Repository.model.UnidadMedida
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

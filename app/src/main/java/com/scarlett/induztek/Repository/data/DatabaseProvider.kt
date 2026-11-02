@@ -1,5 +1,4 @@
-
-package com.scarlett.induztek.data
+package com.scarlett.induztek.Repository.data
 
 import android.content.Context
 import androidx.room.Room
