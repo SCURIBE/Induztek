@@ -1,5 +1,7 @@
 package com.scarlett.induztek.ui.screens
 
+import android.database.Cursor
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +36,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import com.scarlett.induztek.viewmodel.AuthViewModel
+import androidx.compose.ui.graphics.Color
+import com.scarlett.induztek.ui.theme.Morado40
+import com.scarlett.induztek.ui.theme.MoradoOscuro
+
 
 @Composable
 fun LoginScreen(
@@ -56,12 +64,15 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .background(MoradoOscuro)
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
+
     ) {
         Text(
             text = "Induztek",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -83,6 +94,14 @@ fun LoginScreen(
             label = { Text("Correo electrónico") },
             singleLine = true,
             enabled = !ocupado,
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Gray,
+                cursorColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+
+            ),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
@@ -108,6 +127,13 @@ fun LoginScreen(
             } else {
                 PasswordVisualTransformation()
             },
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Gray,
+                cursorColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
