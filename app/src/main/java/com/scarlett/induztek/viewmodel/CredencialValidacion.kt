@@ -2,18 +2,24 @@ package com.scarlett.induztek.viewmodel
 
 object CredencialValidacion {
 
-    private const val MINIMO_USUARIO = 3
     private const val MINIMO_CONTRASENA = 8
+    private val FORMATO_CORREO =
+        Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}$")
 
-    fun validarNombreUsuario(nombreUsuario: String): String? {
-        val limpio = nombreUsuario.trim()
+    fun validarCorreoLogin(correo: String): String? {
+        return if (correo.isBlank()) {
+            "Ingresa tu correo."
+        } else {
+            null
+        }
+    }
+
+    fun validarCorreoNuevo(correo: String): String? {
+        val limpio = correo.trim()
 
         return when {
-            limpio.isBlank() -> "Ingresa tu usuario."
-            limpio.length < MINIMO_USUARIO ->
-                "El usuario debe tener al menos $MINIMO_USUARIO caracteres."
-
-            limpio.contains(" ") -> "El usuario no puede tener espacios."
+            limpio.isBlank() -> "Ingresa tu correo."
+            !FORMATO_CORREO.matches(limpio) -> "Ingresa un correo válido."
             else -> null
         }
     }

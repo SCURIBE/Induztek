@@ -14,8 +14,10 @@ class EquipoDaoFalso(iniciales: List<Equipo> = emptyList()) : EquipoDao {
     val equipos = MutableStateFlow(iniciales)
     private var siguienteId = (iniciales.maxOfOrNull { it.id } ?: 0) + 1
 
-    override suspend fun insertar(equipo: Equipo) {
-        equipos.value = equipos.value + equipo.copy(id = siguienteId++)
+    override suspend fun insertar(equipo: Equipo): Long {
+        val id = siguienteId++
+        equipos.value = equipos.value + equipo.copy(id = id)
+        return id.toLong()
     }
 
     override suspend fun actualizar(equipo: Equipo) {

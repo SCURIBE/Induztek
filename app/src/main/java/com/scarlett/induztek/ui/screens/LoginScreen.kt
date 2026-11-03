@@ -80,11 +80,11 @@ fun LoginScreen(
                 usuario = it
                 authViewModel.limpiarError()
             },
-            label = { Text("Usuario") },
+            label = { Text("Correo electrónico") },
             singleLine = true,
             enabled = !ocupado,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()

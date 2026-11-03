@@ -3,11 +3,13 @@ package com.scarlett.induztek.data
 import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import com.scarlett.induztek.Repository.data.AppDatabase
+import com.scarlett.induztek.Repository.data.UsuarioRepository
 import com.scarlett.induztek.Repository.model.Equipo
 import com.scarlett.induztek.Repository.model.Medicion
 import com.scarlett.induztek.Repository.model.Prueba
 import com.scarlett.induztek.Repository.model.TipoEnsayo
 import com.scarlett.induztek.Repository.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.TipoUsuario
 import com.scarlett.induztek.Repository.model.UnidadMedida
 import com.scarlett.induztek.Repository.model.Usuario
 import kotlinx.coroutines.flow.first
@@ -38,7 +40,9 @@ class DaosTest {
         db = Room.inMemoryDatabaseBuilder(
             RuntimeEnvironment.getApplication(),
             AppDatabase::class.java
-        ).build()
+        )
+            .addCallback(AppDatabase.seedCallback)
+            .build()
     }
 
     @After
@@ -133,16 +137,59 @@ class DaosTest {
     @Test
     fun `el indice unico rechaza dos usuarios con el mismo nombre`() {
         val usuario = Usuario(
-            nombreUsuario = "lu",
+            nombreUsuario = "lu@induztek.com",
             nombreCompleto = "Lu",
             credencial = "x",
-            creadoEn = 0
+            creadoEn = 0,
+            tipoUsuarioId = TipoUsuario.ID_TECNICO
         )
 
         runBlocking { db.usuarioDao().insertar(usuario) }
 
         // Es la red de seguridad del registro: aunque dos registros pasen
         // la consulta existeNombre a la vez, la base no deja el segundo.
+        assertThrows(SQLiteConstraintException::class.java) {
+            runBlocking { db.usuarioDao().insertar(usuario) }
+        }
+    }
+
+    @Test
+    fun `precarga los tres tipos de usuario`() = runBlocking {
+        val tipos = db.tipoUsuarioDao().obtenerTodos().first()
+
+        assertEquals(
+            listOf(
+                TipoUsuario(TipoUsuario.ID_ADMINISTRADOR, "Administrador"),
+                TipoUsuario(TipoUsuario.ID_TECNICO, "Técnico"),
+                TipoUsuario(TipoUsuario.ID_SUPERVISOR, "Supervisor")
+            ),
+            tipos
+        )
+    }
+
+    @Test
+    fun `precarga el administrador y puede autenticarse`() = runBlocking {
+        val repositorio = UsuarioRepository(db.usuarioDao())
+
+        val admin = repositorio.autenticar(
+            AppDatabase.ADMIN_CORREO,
+            AppDatabase.ADMIN_CONTRASENA
+        )
+
+        assertEquals(TipoUsuario.ID_ADMINISTRADOR, admin?.tipoUsuarioId)
+        assertEquals(1, db.usuarioDao().contar())
+    }
+
+    @Test
+    fun `la clave foranea rechaza un tipo de usuario inexistente`() {
+        val usuario = Usuario(
+            nombreUsuario = "lu@induztek.com",
+            nombreCompleto = "Lu",
+            credencial = "x",
+            creadoEn = 0,
+            tipoUsuarioId = 99
+        )
+
         assertThrows(SQLiteConstraintException::class.java) {
             runBlocking { db.usuarioDao().insertar(usuario) }
         }

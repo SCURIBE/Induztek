@@ -1,14 +1,11 @@
 package com.scarlett.induztek.Repository.data
 
 import android.content.Context
-import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.scarlett.induztek.Repository.model.TipoUsuario
 
 object DatabaseProvider {
-
-    @Volatile
-    private var INSTANCE: AppDatabase? = null
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
@@ -317,6 +314,68 @@ object DatabaseProvider {
         }
     }
 
+    private val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE tipo_usuarios (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    tipo_usuario TEXT NOT NULL
+                )
+                """.trimIndent()
+            )
+
+            db.execSQL(AppDatabase.SQL_PRECARGAR_TIPOS)
+
+            db.execSQL(
+                """
+                CREATE TABLE usuarios_nueva (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    nombreUsuario TEXT NOT NULL,
+                    nombreCompleto TEXT NOT NULL,
+                    credencial TEXT NOT NULL,
+                    creadoEn INTEGER NOT NULL,
+                    tipoUsuarioId INTEGER NOT NULL,
+                    FOREIGN KEY(tipoUsuarioId) REFERENCES tipo_usuarios(id)
+                        ON UPDATE NO ACTION ON DELETE NO ACTION
+                )
+                """.trimIndent()
+            )
+
+            db.execSQL(
+                """
+                INSERT INTO usuarios_nueva (
+                    id, nombreUsuario, nombreCompleto,
+                    credencial, creadoEn, tipoUsuarioId
+                )
+                SELECT
+                    id, nombreUsuario, nombreCompleto,
+                    credencial, creadoEn, ${TipoUsuario.ID_TECNICO}
+                FROM usuarios
+                """.trimIndent()
+            )
+
+            db.execSQL("DROP TABLE usuarios")
+            db.execSQL(
+                "ALTER TABLE usuarios_nueva RENAME TO usuarios"
+            )
+
+            db.execSQL(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS index_usuarios_nombreUsuario
+                ON usuarios (nombreUsuario)
+                """.trimIndent()
+            )
+
+            db.execSQL(
+                """
+                CREATE INDEX IF NOT EXISTS index_usuarios_tipoUsuarioId
+                ON usuarios (tipoUsuarioId)
+                """.trimIndent()
+            )
+        }
+    }
+
     // Todas las migraciones en orden. Es internal y no private para que
     // el test de migraciones abra una base vieja con exactamente las
     // mismas que usa la app.
@@ -325,19 +384,11 @@ object DatabaseProvider {
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
-        MIGRATION_5_6
+        MIGRATION_5_6,
+        MIGRATION_6_7
     )
 
     fun obtenerBaseDatos(context: Context): AppDatabase {
-        return INSTANCE ?: synchronized(this) {
-            INSTANCE ?: Room.databaseBuilder(
-                context.applicationContext,
-                AppDatabase::class.java,
-                "induztek_db"
-            )
-                .addMigrations(*MIGRACIONES)
-                .build()
-                .also { INSTANCE = it }
-        }
+        return AppDatabase.getDatabase(context)
     }
 }

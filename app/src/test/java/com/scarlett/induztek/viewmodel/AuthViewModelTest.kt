@@ -1,6 +1,7 @@
 package com.scarlett.induztek.viewmodel
 
 import com.scarlett.induztek.Repository.data.UsuarioRepository
+import com.scarlett.induztek.Repository.model.TipoUsuario
 import com.scarlett.induztek.falsos.ReglaDespachadorPrincipal
 import com.scarlett.induztek.falsos.SesionFalsa
 import com.scarlett.induztek.falsos.UsuarioDaoFalso
@@ -19,8 +20,8 @@ class AuthViewModelTest {
     @get:Rule
     val regla = ReglaDespachadorPrincipal()
 
-    private val demo = UsuarioRepository.USUARIO_DEMO
-    private val claveDemo = UsuarioRepository.CONTRASENA_DEMO
+    private val correo = "tecnico@induztek.com"
+    private val clave = "Abc12345"
 
     private fun crear(
         dao: UsuarioDaoFalso,
@@ -37,8 +38,13 @@ class AuthViewModelTest {
             nombreUsuario = nombre,
             nombreCompleto = "Nombre de $nombre",
             credencial = Hash.generar(clave),
-            creadoEn = 0
+            creadoEn = 0,
+            tipoUsuarioId = TipoUsuario.ID_TECNICO
         )
+    }
+
+    private fun daoConTecnico(): UsuarioDaoFalso {
+        return UsuarioDaoFalso(listOf(usuario(1, correo, clave)))
     }
 
     private fun autenticado(viewModel: AuthViewModel): Usuario? {
@@ -46,40 +52,27 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `crea el usuario de demostracion si no hay ninguno`() = runTest {
+    fun `no crea usuarios al iniciar`() = runTest {
         val dao = UsuarioDaoFalso()
 
         val viewModel = crear(dao)
 
-        val creado = dao.usuarios.single()
-        assertEquals(demo, creado.nombreUsuario)
-        // Se guarda el hash, nunca la contraseña.
-        assertFalse(creado.credencial.contains(claveDemo))
-        assertTrue(Hash.verificar(claveDemo, creado.credencial))
+        assertTrue(dao.usuarios.isEmpty())
         assertEquals(EstadoSesion.SinSesion, viewModel.estado.value)
     }
 
     @Test
-    fun `no crea el usuario de demostracion si ya hay usuarios`() = runTest {
-        val dao = UsuarioDaoFalso(listOf(usuario(1, "lu", "Abc12345")))
-
-        crear(dao)
-
-        assertEquals(listOf("lu"), dao.usuarios.map { it.nombreUsuario })
-    }
-
-    @Test
     fun `entra directo si habia una sesion guardada`() = runTest {
-        val dao = UsuarioDaoFalso(listOf(usuario(7, "lu", "Abc12345")))
+        val dao = UsuarioDaoFalso(listOf(usuario(7, "lu@induztek.com", "Abc12345")))
 
         val viewModel = crear(dao, SesionFalsa(inicial = 7))
 
-        assertEquals("lu", autenticado(viewModel)?.nombreUsuario)
+        assertEquals("lu@induztek.com", autenticado(viewModel)?.nombreUsuario)
     }
 
     @Test
     fun `limpia una sesion que apunta a un usuario borrado`() = runTest {
-        val dao = UsuarioDaoFalso(listOf(usuario(1, "lu", "Abc12345")))
+        val dao = UsuarioDaoFalso(listOf(usuario(1, "lu@induztek.com", "Abc12345")))
         val sesion = SesionFalsa(inicial = 99)
 
         val viewModel = crear(dao, sesion)
@@ -91,29 +84,39 @@ class AuthViewModelTest {
     @Test
     fun `entra con la contrasena correcta`() = runTest {
         val sesion = SesionFalsa()
-        val viewModel = crear(UsuarioDaoFalso(), sesion)
+        val viewModel = crear(daoConTecnico(), sesion)
 
         // El usuario no distingue mayúsculas ni espacios alrededor.
-        viewModel.iniciarSesion("  TECNICO ", claveDemo)
+        viewModel.iniciarSesion("  TECNICO@INDUZTEK.COM ", clave)
 
-        assertEquals(demo, autenticado(viewModel)?.nombreUsuario)
+        assertEquals(correo, autenticado(viewModel)?.nombreUsuario)
         assertEquals(autenticado(viewModel)?.id, sesion.actual)
         assertNull(viewModel.error.value)
+    }
+
+    @Test
+    fun `una cuenta antigua sin correo puede entrar`() = runTest {
+        val dao = UsuarioDaoFalso(listOf(usuario(1, "tecnico", clave)))
+        val viewModel = crear(dao)
+
+        viewModel.iniciarSesion("tecnico", clave)
+
+        assertEquals("tecnico", autenticado(viewModel)?.nombreUsuario)
     }
 
     @Test
     fun `contrasena incorrecta y usuario inexistente dan el mismo mensaje`() = runTest {
         // Si los mensajes fueran distintos, quien prueba sabría qué
         // usuarios existen.
-        val viewModel = crear(UsuarioDaoFalso())
+        val viewModel = crear(daoConTecnico())
 
-        viewModel.iniciarSesion(demo, "otraClave1")
+        viewModel.iniciarSesion(correo, "otraClave1")
         val conClaveMala = viewModel.error.value
 
-        viewModel.iniciarSesion("nadie", "otraClave1")
+        viewModel.iniciarSesion("nadie@induztek.com", "otraClave1")
         val sinUsuario = viewModel.error.value
 
-        assertEquals("Usuario o contraseña incorrectos.", conClaveMala)
+        assertEquals("Correo o contraseña incorrectos.", conClaveMala)
         assertEquals(conClaveMala, sinUsuario)
         assertEquals(EstadoSesion.SinSesion, viewModel.estado.value)
     }
@@ -124,42 +127,54 @@ class AuthViewModelTest {
 
         viewModel.iniciarSesion("", "")
 
-        assertEquals("Ingresa tu usuario.", viewModel.error.value)
+        assertEquals("Ingresa tu correo.", viewModel.error.value)
         assertFalse(viewModel.ocupado.value)
     }
 
     @Test
-    fun `registra un usuario y abre su sesion`() = runTest {
+    fun `registra un usuario como tecnico y abre su sesion`() = runTest {
         val dao = UsuarioDaoFalso()
         val sesion = SesionFalsa()
         val viewModel = crear(dao, sesion)
 
-        viewModel.registrar("LuPereira", " Lu Pereira ", "Abc12345", "Abc12345")
+        viewModel.registrar("Lu@Induztek.com", " Lu Pereira ", "Abc12345", "Abc12345")
 
-        val nuevo = dao.usuarios.single { it.nombreUsuario == "lupereira" }
+        val nuevo = dao.usuarios.single { it.nombreUsuario == "lu@induztek.com" }
         assertEquals("Lu Pereira", nuevo.nombreCompleto)
+        assertEquals(TipoUsuario.ID_TECNICO, nuevo.tipoUsuarioId)
         assertFalse(nuevo.credencial.contains("Abc12345"))
         assertEquals(nuevo.id, sesion.actual)
-        assertEquals("lupereira", autenticado(viewModel)?.nombreUsuario)
+        assertEquals("lu@induztek.com", autenticado(viewModel)?.nombreUsuario)
+    }
+
+    @Test
+    fun `no registra un usuario sin formato de correo`() = runTest {
+        val dao = UsuarioDaoFalso()
+        val viewModel = crear(dao)
+
+        viewModel.registrar("lupereira", "Lu Pereira", "Abc12345", "Abc12345")
+
+        assertEquals("Ingresa un correo válido.", viewModel.error.value)
+        assertTrue(dao.usuarios.isEmpty())
     }
 
     @Test
     fun `no registra un usuario repetido`() = runTest {
-        val dao = UsuarioDaoFalso()
+        val dao = daoConTecnico()
         val viewModel = crear(dao)
 
-        viewModel.registrar("TECNICO", "Otra persona", "Abc12345", "Abc12345")
+        viewModel.registrar("TECNICO@induztek.com", "Otra persona", "Abc12345", "Abc12345")
 
-        assertEquals("Ese usuario ya está registrado.", viewModel.error.value)
+        assertEquals("Ese correo ya está registrado.", viewModel.error.value)
         assertEquals(1, dao.usuarios.size)
     }
 
     @Test
     fun `no registra si la confirmacion no coincide`() = runTest {
-        val dao = UsuarioDaoFalso()
+        val dao = daoConTecnico()
         val viewModel = crear(dao)
 
-        viewModel.registrar("lupereira", "Lu Pereira", "Abc12345", "Abc12346")
+        viewModel.registrar("lu@induztek.com", "Lu Pereira", "Abc12345", "Abc12346")
 
         assertEquals("Las contraseñas no coinciden.", viewModel.error.value)
         assertEquals(1, dao.usuarios.size)
@@ -168,8 +183,8 @@ class AuthViewModelTest {
     @Test
     fun `cerrar sesion vuelve al login`() = runTest {
         val sesion = SesionFalsa()
-        val viewModel = crear(UsuarioDaoFalso(), sesion)
-        viewModel.iniciarSesion(demo, claveDemo)
+        val viewModel = crear(daoConTecnico(), sesion)
+        viewModel.iniciarSesion(correo, clave)
 
         viewModel.cerrarSesion()
 

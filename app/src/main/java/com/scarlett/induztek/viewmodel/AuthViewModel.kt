@@ -44,10 +44,6 @@ class AuthViewModel(
 
     init {
         viewModelScope.launch {
-            withContext(despachadorCalculo) {
-                repository.sembrarSiEstaVacia()
-            }
-
             sesionStore.usuarioId.collect { id ->
                 _estado.value = if (id == null) {
                     EstadoSesion.SinSesion
@@ -67,7 +63,7 @@ class AuthViewModel(
             // Las mismas funciones que usan las pantallas para avisar
             // antes de tocar el botón, en vez de repetir las reglas.
             val aviso =
-                CredencialValidacion.validarNombreUsuario(nombreUsuario)
+                CredencialValidacion.validarCorreoLogin(nombreUsuario)
                     ?: CredencialValidacion.validarContrasenaLogin(contrasena)
 
             if (aviso != null) {
@@ -89,7 +85,7 @@ class AuthViewModel(
             if (usuario == null) {
                 // Mensaje genérico a propósito: "ese usuario no existe"
                 // le confirma a quien prueba cuáles son válidos.
-                _error.value = "Usuario o contraseña incorrectos."
+                _error.value = "Correo o contraseña incorrectos."
                 return@launch
             }
 
@@ -108,7 +104,7 @@ class AuthViewModel(
         viewModelScope.launch {
             val aviso =
                 CredencialValidacion.validarNombreCompleto(nombreCompleto)
-                    ?: CredencialValidacion.validarNombreUsuario(nombreUsuario)
+                    ?: CredencialValidacion.validarCorreoNuevo(nombreUsuario)
                     ?: CredencialValidacion.validarContrasenaNueva(contrasena)
                     ?: CredencialValidacion.validarConfirmacion(
                         contrasena,
@@ -125,7 +121,7 @@ class AuthViewModel(
 
             if (repository.existeNombre(nombreUsuario)) {
                 _ocupado.value = false
-                _error.value = "Ese usuario ya está registrado."
+                _error.value = "Ese correo ya está registrado."
                 return@launch
             }
 
@@ -142,7 +138,7 @@ class AuthViewModel(
                 // real: entre la consulta de arriba y este insert cabe
                 // otro registro con el mismo nombre.
                 _ocupado.value = false
-                _error.value = "Ese usuario ya está registrado."
+                _error.value = "Ese correo ya está registrado."
                 return@launch
             }
 

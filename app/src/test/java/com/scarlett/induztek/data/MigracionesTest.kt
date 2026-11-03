@@ -7,6 +7,7 @@ import com.scarlett.induztek.Repository.data.AppDatabase
 import com.scarlett.induztek.Repository.data.DatabaseProvider
 import com.scarlett.induztek.Repository.model.TipoEnsayo
 import com.scarlett.induztek.Repository.model.TipoEquipo
+import com.scarlett.induztek.Repository.model.TipoUsuario
 import com.scarlett.induztek.Repository.model.UnidadMedida
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -43,7 +44,7 @@ class MigracionesTest {
     }
 
     @Test
-    fun `una base version 4 llega a la 6 y Room acepta el esquema`() {
+    fun `una base version 4 llega a la 7 y Room acepta el esquema`() {
         crearBaseVersion4()
 
         val db = abrirConRoom()
@@ -52,7 +53,7 @@ class MigracionesTest {
             // La primera consulta abre la base: migra y valida.
             runBlocking { db.equipoDao().obtenerTodos().first() }
 
-            assertEquals(6, db.openHelper.readableDatabase.version)
+            assertEquals(7, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -141,10 +142,143 @@ class MigracionesTest {
         }
     }
 
+    @Test
+    fun `los usuarios de la version 6 quedan como tecnicos y se agrega el administrador`() {
+        crearBaseVersion6()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, nombre)
+            .addMigrations(*DatabaseProvider.MIGRACIONES)
+            .addCallback(AppDatabase.seedCallback)
+            .build()
+
+        try {
+            runBlocking {
+                assertEquals(3, db.tipoUsuarioDao().obtenerTodos().first().size)
+
+                val antiguo = db.usuarioDao().buscarPorNombre("tecnico")
+                assertEquals(5, antiguo?.id)
+                assertEquals("hash", antiguo?.credencial)
+                assertEquals(TipoUsuario.ID_TECNICO, antiguo?.tipoUsuarioId)
+
+                val admin = db.usuarioDao().buscarPorNombre(AppDatabase.ADMIN_CORREO)
+                assertEquals(TipoUsuario.ID_ADMINISTRADOR, admin?.tipoUsuarioId)
+                assertEquals(2, db.usuarioDao().contar())
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `reabrir la base no duplica la precarga ni rehace el hash`() {
+        fun abrir() = Room.databaseBuilder(context, AppDatabase::class.java, nombre)
+            .addMigrations(*DatabaseProvider.MIGRACIONES)
+            .addCallback(AppDatabase.seedCallback)
+            .build()
+
+        val primera = abrir()
+        val credencial = runBlocking {
+            primera.usuarioDao().buscarPorNombre(AppDatabase.ADMIN_CORREO)?.credencial
+        }
+        primera.close()
+
+        val segunda = abrir()
+
+        try {
+            runBlocking {
+                assertEquals(3, segunda.tipoUsuarioDao().obtenerTodos().first().size)
+                assertEquals(1, segunda.usuarioDao().contar())
+                assertEquals(
+                    credencial,
+                    segunda.usuarioDao().buscarPorNombre(AppDatabase.ADMIN_CORREO)?.credencial
+                )
+            }
+        } finally {
+            segunda.close()
+        }
+    }
+
     private fun abrirConRoom(): AppDatabase {
         return Room.databaseBuilder(context, AppDatabase::class.java, nombre)
             .addMigrations(*DatabaseProvider.MIGRACIONES)
             .build()
+    }
+
+    private fun crearBaseVersion6() {
+        val archivo = context.getDatabasePath(nombre)
+        archivo.parentFile?.mkdirs()
+
+        val db = SQLiteDatabase.openOrCreateDatabase(archivo, null)
+
+        db.execSQL(
+            """
+            CREATE TABLE equipos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                tipo TEXT NOT NULL,
+                codigo TEXT NOT NULL,
+                fotoUri TEXT
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE pruebas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                equipoId INTEGER NOT NULL,
+                fechaHora INTEGER NOT NULL,
+                ubicacion TEXT NOT NULL,
+                tipoEnsayo TEXT NOT NULL,
+                unidadMedida TEXT NOT NULL,
+                cliente TEXT NOT NULL,
+                tecnicoResponsable TEXT NOT NULL,
+                observaciones TEXT NOT NULL,
+                FOREIGN KEY(equipoId) REFERENCES equipos(id)
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL("CREATE INDEX index_pruebas_equipoId ON pruebas (equipoId)")
+
+        db.execSQL(
+            """
+            CREATE TABLE mediciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                pruebaId INTEGER NOT NULL,
+                nombre TEXT NOT NULL,
+                valor REAL NOT NULL,
+                minimoAceptable REAL,
+                maximoAceptable REAL,
+                FOREIGN KEY(pruebaId) REFERENCES pruebas(id)
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL("CREATE INDEX index_mediciones_pruebaId ON mediciones (pruebaId)")
+
+        db.execSQL(
+            """
+            CREATE TABLE usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                nombreUsuario TEXT NOT NULL,
+                nombreCompleto TEXT NOT NULL,
+                credencial TEXT NOT NULL,
+                creadoEn INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            "CREATE UNIQUE INDEX index_usuarios_nombreUsuario ON usuarios (nombreUsuario)"
+        )
+
+        db.execSQL(
+            "INSERT INTO usuarios VALUES (5, 'tecnico', 'Tecnico de terreno', 'hash', 0)"
+        )
+
+        db.version = 6
+        db.close()
     }
 
     /*

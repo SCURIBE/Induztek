@@ -55,7 +55,7 @@ fun RegistroScreen(
     // Los avisos por campo salen de las mismas funciones que revisa el
     // ViewModel al guardar, y solo aparecen tras el primer intento.
     val avisoNombre = CredencialValidacion.validarNombreCompleto(nombreCompleto)
-    val avisoUsuario = CredencialValidacion.validarNombreUsuario(usuario)
+    val avisoUsuario = CredencialValidacion.validarCorreoNuevo(usuario)
     val avisoContrasena = CredencialValidacion.validarContrasenaNueva(contrasena)
     val avisoConfirmacion =
         CredencialValidacion.validarConfirmacion(contrasena, confirmacion)
@@ -123,7 +123,7 @@ fun RegistroScreen(
                 usuario = it
                 limpiarAvisos()
             },
-            label = { Text("Usuario") },
+            label = { Text("Correo electrónico") },
             singleLine = true,
             enabled = !ocupado,
             isError = intentoRegistrar && avisoUsuario != null,
@@ -133,7 +133,7 @@ fun RegistroScreen(
                 }
             },
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()

@@ -7,18 +7,25 @@ import org.junit.Test
 class CredencialValidacionTest {
 
     @Test
-    fun `acepta un usuario valido`() {
-        assertNull(CredencialValidacion.validarNombreUsuario("tecnico"))
-        // Se recorta antes de medir, igual que al guardar.
-        assertNull(CredencialValidacion.validarNombreUsuario("  tecnico  "))
+    fun `acepta un correo valido`() {
+        assertNull(CredencialValidacion.validarCorreoNuevo("tecnico@induztek.com"))
+        assertNull(CredencialValidacion.validarCorreoNuevo("  lu.perez+1@planta.induztek.cl  "))
     }
 
     @Test
-    fun `rechaza un usuario vacio corto o con espacios`() {
-        assertNotNull(CredencialValidacion.validarNombreUsuario(""))
-        assertNotNull(CredencialValidacion.validarNombreUsuario("   "))
-        assertNotNull(CredencialValidacion.validarNombreUsuario("lu"))
-        assertNotNull(CredencialValidacion.validarNombreUsuario("lu perez"))
+    fun `rechaza un correo vacio o mal formado`() {
+        assertNotNull(CredencialValidacion.validarCorreoNuevo(""))
+        assertNotNull(CredencialValidacion.validarCorreoNuevo("   "))
+        assertNotNull(CredencialValidacion.validarCorreoNuevo("tecnico"))
+        assertNotNull(CredencialValidacion.validarCorreoNuevo("tecnico@induztek"))
+        assertNotNull(CredencialValidacion.validarCorreoNuevo("lu perez@induztek.com"))
+        assertNotNull(CredencialValidacion.validarCorreoNuevo("@induztek.com"))
+    }
+
+    @Test
+    fun `el login no exige formato de correo`() {
+        assertNull(CredencialValidacion.validarCorreoLogin("tecnico"))
+        assertNotNull(CredencialValidacion.validarCorreoLogin("  "))
     }
 
     @Test
