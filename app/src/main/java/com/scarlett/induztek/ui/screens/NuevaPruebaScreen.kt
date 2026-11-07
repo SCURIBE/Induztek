@@ -1,5 +1,10 @@
 package com.scarlett.induztek.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -116,12 +121,10 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
         it.id == equipoSeleccionadoId
     }
 
-    // Las unidades que se ofrecen dependen del ensayo elegido, para no
-    // guardar por ejemplo un aislamiento medido en milisegundos.
+    // Las unidades que se ofrecen dependen del ensayo elegido.
     val unidadesDisponibles = tipoEnsayo?.unidades ?: emptyList()
 
-    // Los mensajes vienen de PruebaValidacion, las mismas funciones que
-    // usa el ViewModel al guardar, en vez de repetir las reglas aquí.
+    // Validaciones del formulario.
     val errorEquipo = PruebaValidacion.validarEquipo(equipoSeleccionadoId)
     val errorUbicacion = PruebaValidacion.validarUbicacion(ubicacion)
     val errorTipoEnsayo = PruebaValidacion.validarTipoEnsayo(tipoEnsayo)
@@ -142,8 +145,7 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
         limpiarAvisos()
     }
 
-    // Puntos que todavía no se usaron: los nombres no se pueden repetir
-    // porque la comparación del historial empareja por nombre.
+    // Evita repetir puntos de medición.
     fun puntosLibres(fila: FilaMedicion): List<String> {
         val usados = filas
             .filter { it.clave != fila.clave }
@@ -235,8 +237,6 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 alSeleccionar = { elegido ->
                     tipoEnsayo = elegido
 
-                    // Si la unidad elegida no sirve para el ensayo
-                    // nuevo, se reemplaza por la que corresponde.
                     if (unidadMedida !in elegido.unidades) {
                         unidadMedida = elegido.unidadPorDefecto
                     }
@@ -504,16 +504,26 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 }
             }
 
-            if (error != null) {
+            // Animación para mostrar y ocultar errores.
+            AnimatedVisibility(
+                visible = error != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Text(
-                    text = error!!,
+                    text = error.orEmpty(),
                     color = MaterialTheme.colorScheme.error
                 )
             }
 
-            if (mensaje != null) {
+            // Animación para confirmar que la prueba se guardó.
+            AnimatedVisibility(
+                visible = mensaje != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Text(
-                    text = mensaje!!,
+                    text = mensaje.orEmpty(),
                     color = MaterialTheme.colorScheme.primary
                 )
             }

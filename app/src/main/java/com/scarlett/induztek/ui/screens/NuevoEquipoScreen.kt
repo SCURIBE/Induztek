@@ -1,3 +1,4 @@
+
 package com.scarlett.induztek.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -31,14 +32,25 @@ fun NuevoEquipoScreen(
     alGuardar: (String, TipoEquipo, String?, (Boolean) -> Unit) -> Unit,
     alCancelar: () -> Unit
 ) {
-    // rememberSaveable en lo que escribe el usuario: mientras la cámara
-    // está abierta, Android puede destruir esta pantalla, y al volver el
-    // formulario tiene que seguir lleno.
-    var codigo by rememberSaveable { mutableStateOf("") }
-    var tipo by rememberSaveable { mutableStateOf<TipoEquipo?>(null) }
-    var fotoUri by rememberSaveable { mutableStateOf<String?>(null) }
-    var errorLocal by remember { mutableStateOf<String?>(null) }
-    var guardando by remember { mutableStateOf(false) }
+    var codigo by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    var tipo by rememberSaveable {
+        mutableStateOf<TipoEquipo?>(null)
+    }
+
+    var fotoUri by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var errorLocal by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var guardando by remember {
+        mutableStateOf(false)
+    }
 
     val mensajeError = errorExterno ?: errorLocal
 
@@ -64,6 +76,7 @@ fun NuevoEquipoScreen(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 Text(
                     text = "Registrar equipo",
                     style = MaterialTheme.typography.headlineSmall
@@ -71,8 +84,7 @@ fun NuevoEquipoScreen(
 
                 Text(
                     text = "Ingresa los datos del equipo eléctrico.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium
                 )
 
                 OutlinedTextField(
@@ -81,11 +93,14 @@ fun NuevoEquipoScreen(
                         codigo = it
                         errorLocal = null
                     },
-                    label = { Text("Código del equipo") },
-                    placeholder = { Text("Ej. EQ-001") },
+                    label = {
+                        Text("Código del equipo")
+                    },
+                    placeholder = {
+                        Text("Ej. EQ-001")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
                     isError = mensajeError != null && codigo.isBlank(),
                     enabled = !guardando
                 )
@@ -113,14 +128,13 @@ fun NuevoEquipoScreen(
                 SelectorFoto(
                     fotoUri = fotoUri,
                     alCambiar = { nueva ->
-                        // La foto anterior de este formulario todavía no
-                        // pertenece a ningún equipo: si se reemplaza, se
-                        // borra para no dejarla huérfana.
                         AlmacenFotos.borrar(fotoUri)
                         fotoUri = nueva
                         errorLocal = null
                     },
-                    alError = { errorLocal = it },
+                    alError = {
+                        errorLocal = it
+                    },
                     habilitado = !guardando
                 )
 
@@ -144,7 +158,7 @@ fun NuevoEquipoScreen(
                             guardando = true
 
                             alGuardar(
-                                codigo,
+                                codigo.trim(),
                                 tipoElegido,
                                 fotoUri
                             ) { guardado ->
@@ -162,7 +176,6 @@ fun NuevoEquipoScreen(
 
                 OutlinedButton(
                     onClick = {
-                        // Si se cancela, la foto tomada no la usa nadie.
                         AlmacenFotos.borrar(fotoUri)
                         alCancelar()
                     },

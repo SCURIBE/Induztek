@@ -39,12 +39,8 @@ android {
         compose = true
     }
     testOptions {
-        // Robolectric necesita los recursos y el manifest fusionado para
-        // levantar la aplicación en los tests de la base de datos.
-        unitTests.isIncludeAndroidResources = true
 
-        // Robolectric simula partes de Android con clases internas del
-        // JDK que desde Java 17 están cerradas. Solo afecta a los tests.
+        unitTests.isIncludeAndroidResources = true
         unitTests.all { prueba ->
             prueba.jvmArgs(
                 "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
@@ -84,6 +80,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     ksp(libs.androidx.room.compiler)
 }

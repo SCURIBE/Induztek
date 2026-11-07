@@ -33,9 +33,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Solo en un arranque nuevo. Al girar la pantalla savedInstanceState
-        // no es null, y podría haber un formulario abierto con una foto
-        // tomada y todavía sin guardar.
         if (savedInstanceState == null) {
             limpiarFotosHuerfanas()
         }
@@ -55,9 +52,6 @@ class MainActivity : ComponentActivity() {
 
                 val estado by authViewModel.estado.collectAsState()
 
-                // El portón de la sesión está aquí, por encima del
-                // NavHost de la app: así el login no necesita ocultar la
-                // barra inferior ni dejar rastro en la pila de retroceso.
                 AnimatedContent(
                     targetState = estado,
                     contentKey = { it::class },
@@ -83,8 +77,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Ver AlmacenFotos.limpiarHuerfanas: borra las fotos que quedaron
-    // sin equipo, por ejemplo al salir de un formulario con el botón atrás.
     private fun limpiarFotosHuerfanas() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -97,8 +89,7 @@ class MainActivity : ComponentActivity() {
                     enUso
                 )
             } catch (_: Exception) {
-                // Si la base no se puede abrir, mejor no borrar nada. La
-                // pantalla mostrará el problema al intentar leerla.
+
             }
         }
     }

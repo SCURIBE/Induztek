@@ -1,3 +1,4 @@
+
 package com.scarlett.induztek.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -5,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,9 +28,6 @@ fun EditarEquipoScreen(
     alGuardar: (Equipo, (Boolean) -> Unit) -> Unit,
     alCancelar: () -> Unit
 ) {
-    // rememberSaveable en lo que escribe el usuario: mientras la cámara
-    // está abierta, Android puede destruir esta pantalla, y al volver el
-    // formulario tiene que seguir lleno.
     var codigo by rememberSaveable(equipo.id) {
         mutableStateOf(equipo.codigo)
     }
@@ -53,9 +50,7 @@ fun EditarEquipoScreen(
 
     val mensajeError = errorExterno ?: errorLocal
 
-    // Una foto tomada en este formulario y todavía sin guardar. La
-    // original del equipo no se toca aquí: la borra el ViewModel, y solo
-    // después de guardar el cambio.
+    // Descarta una fotografía nueva si se cancela o se reemplaza.
     fun descartarFotoNueva() {
         if (fotoUri != equipo.fotoUri) {
             AlmacenFotos.borrar(fotoUri)
@@ -85,7 +80,9 @@ fun EditarEquipoScreen(
                 codigo = it
                 errorLocal = null
             },
-            label = { Text("Código del equipo") },
+            label = {
+                Text("Código del equipo")
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = mensajeError != null && codigo.isBlank(),
@@ -117,7 +114,9 @@ fun EditarEquipoScreen(
                 fotoUri = nueva
                 errorLocal = null
             },
-            alError = { errorLocal = it },
+            alError = {
+                errorLocal = it
+            },
             habilitado = !guardando,
             textoCamara = "Tomar nueva fotografía",
             textoGaleria = "Cambiar desde galería",
@@ -137,7 +136,7 @@ fun EditarEquipoScreen(
                 errorLocal = null
 
                 if (codigo.isBlank()) {
-                    errorLocal = "Completa todos los campos."
+                    errorLocal = "Ingresa el código del equipo."
                 } else {
                     guardando = true
 
@@ -147,7 +146,7 @@ fun EditarEquipoScreen(
                         fotoUri = fotoUri
                     )
 
-                    alGuardar(equipoActualizado) { guardado ->
+                    alGuardar(equipoActualizado) {
                         guardando = false
                     }
                 }
@@ -166,8 +165,7 @@ fun EditarEquipoScreen(
                 alCancelar()
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !guardando,
-            shape = RoundedCornerShape(14.dp)
+            enabled = !guardando
         ) {
             Text("Cancelar")
         }
