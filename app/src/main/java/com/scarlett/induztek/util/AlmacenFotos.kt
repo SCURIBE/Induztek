@@ -1,4 +1,3 @@
-
 package com.scarlett.induztek.util
 
 import android.content.Context
@@ -62,7 +61,6 @@ object AlmacenFotos {
 
         try {
             context.contentResolver.openInputStream(uri).use { entrada ->
-
                 if (entrada == null) {
                     throw IllegalArgumentException("No se pudo abrir la imagen.")
                 }
@@ -166,15 +164,26 @@ object AlmacenFotos {
 
         val archivos = carpeta.listFiles() ?: return 0
 
-        val usadas = enUso.map {
-            File(it).absolutePath
+        // Normalizar las rutas para reconocer distintas formas
+        // de referirse al mismo archivo.
+        val usadas = enUso.mapNotNull { ruta ->
+            runCatching {
+                File(ruta).canonicalPath
+            }.getOrNull()
         }.toSet()
 
         var eliminadas = 0
 
         for (archivo in archivos) {
-            if (archivo.isFile &&
-                archivo.absolutePath !in usadas
+
+            val rutaArchivo = runCatching {
+                archivo.canonicalPath
+            }.getOrNull()
+
+            if (
+                archivo.isFile &&
+                rutaArchivo != null &&
+                rutaArchivo !in usadas
             ) {
                 if (archivo.delete()) {
                     eliminadas++

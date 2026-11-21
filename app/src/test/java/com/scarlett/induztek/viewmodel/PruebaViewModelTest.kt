@@ -1,3 +1,4 @@
+
 package com.scarlett.induztek.viewmodel
 
 import com.scarlett.induztek.Repository.data.PruebaRepository
@@ -20,16 +21,15 @@ class PruebaViewModelTest {
 
     private val dao = PruebaDaoFalso()
 
-    // by lazy: las propiedades se crean antes de que la regla reemplace
-    // Dispatchers.Main, y el ViewModel arranca su init en ese hilo.
-    private val viewModel by lazy { PruebaViewModel(PruebaRepository(dao)) }
+    private val viewModel by lazy {
+        PruebaViewModel(PruebaRepository(dao))
+    }
 
     private val dosFases = listOf(
         MedicionIngresada("Fase A", "1200", minimoTexto = "1000"),
         MedicionIngresada("Fase B", "950,5", minimoTexto = "1000")
     )
 
-    // Registra con datos válidos salvo lo que el test cambie.
     private fun registrar(
         equipoId: Int? = 1,
         ubicacion: String = "  Planta A ",
@@ -47,24 +47,71 @@ class PruebaViewModelTest {
             cliente = " Minera Norte ",
             tecnicoResponsable = "Lu Pereira",
             observaciones = ""
-        ) { resultado = it }
+        ) {
+            resultado = it
+        }
 
         return resultado
     }
+
+    private fun editar(
+        pruebaId: Int = 1,
+        equipoId: Int? = 1,
+        ubicacion: String = "Planta B",
+        mediciones: List<MedicionIngresada> = listOf(
+            MedicionIngresada(
+                "Fase C",
+                "1500",
+                minimoTexto = "1000"
+            )
+        )
+    ): Boolean? {
+        var resultado: Boolean? = null
+
+        val prueba = dao.pruebas.value.first {
+            it.id == pruebaId
+        }
+
+        viewModel.editar(
+            prueba = prueba,
+            equipoId = equipoId,
+            ubicacion = ubicacion,
+            tipoEnsayo = TipoEnsayo.RESISTENCIA_AISLAMIENTO,
+            unidadMedida = UnidadMedida.MEGAOHM,
+            mediciones = mediciones,
+            cliente = "Cliente actualizado",
+            tecnicoResponsable = "Tecnico actualizado",
+            observaciones = "Observacion actualizada"
+        ) {
+            resultado = it
+        }
+
+        return resultado
+    }
+
+    // PRUEBAS DE REGISTRO
 
     @Test
     fun `guarda la prueba con todas sus mediciones`() = runTest {
         assertEquals(true, registrar())
 
         val prueba = dao.pruebas.value.single()
+
         assertEquals("Planta A", prueba.ubicacion)
         assertEquals("Minera Norte", prueba.cliente)
 
         val mediciones = dao.mediciones.value
-        assertEquals(listOf("Fase A", "Fase B"), mediciones.map { it.nombre })
+
+        assertEquals(
+            listOf("Fase A", "Fase B"),
+            mediciones.map { it.nombre }
+        )
+
         assertEquals(950.5, mediciones[1].valor, 0.0)
-        // Cada medición quedó apuntando a la prueba recién creada.
-        assertTrue(mediciones.all { it.pruebaId == prueba.id })
+
+        assertTrue(
+            mediciones.all { it.pruebaId == prueba.id }
+        )
 
         assertNull(viewModel.error.value)
         assertTrue(viewModel.guardado.value)
@@ -73,22 +120,24 @@ class PruebaViewModelTest {
     @Test
     fun `la fecha se toma al guardar`() = runTest {
         val antes = System.currentTimeMillis()
+
         registrar()
+
         val despues = System.currentTimeMillis()
 
         val fecha = dao.pruebas.value.single().fechaHora
+
         assertTrue(fecha in antes..despues)
     }
 
     @Test
     fun `dos pruebas seguidas no comparten la hora de la primera`() = runTest {
-        // Antes la pantalla calculaba la fecha una vez con remember, y
-        // todas las pruebas de la sesión quedaban con la misma hora.
         registrar()
         Thread.sleep(5)
         registrar()
 
         val fechas = dao.pruebas.value.map { it.fechaHora }
+
         assertTrue(fechas[1] > fechas[0])
     }
 
@@ -115,6 +164,100 @@ class PruebaViewModelTest {
             listOf("Planta B", "Planta A"),
             viewModel.pruebas.value.map { it.prueba.ubicacion }
         )
+
         assertEquals(2, viewModel.pruebas.value[0].mediciones.size)
+    }
+
+    // PRUEBAS DE EDICIÓN
+
+    @Test
+    fun `actualiza una prueba existente sin duplicarla`() = runTest {
+        registrar()
+
+        assertEquals(1, dao.pruebas.value.size)
+
+        assertEquals(true, editar())
+
+        assertEquals(1, dao.pruebas.value.size)
+        assertEquals("Planta B", dao.pruebas.value.single().ubicacion)
+    }
+
+    @Test
+    fun `al editar conserva el id y la fecha original`() = runTest {
+        registrar()
+
+        val original = dao.pruebas.value.single()
+        val idOriginal = original.id
+        val fechaOriginal = original.fechaHora
+
+        assertEquals(true, editar())
+
+        val actualizada = dao.pruebas.value.single()
+
+        assertEquals(idOriginal, actualizada.id)
+        assertEquals(fechaOriginal, actualizada.fechaHora)
+    }
+
+    @Test
+    fun `al editar reemplaza las mediciones anteriores`() = runTest {
+        registrar()
+
+        assertEquals(2, dao.mediciones.value.size)
+
+        assertEquals(true, editar())
+
+        val prueba = dao.pruebas.value.single()
+        val medicionesActualizadas = dao.mediciones.value
+
+        assertEquals(1, medicionesActualizadas.size)
+        assertEquals("Fase C", medicionesActualizadas.single().nombre)
+        assertEquals(1500.0, medicionesActualizadas.single().valor, 0.0)
+
+        assertTrue(
+            medicionesActualizadas.all {
+                it.pruebaId == prueba.id
+            }
+        )
+    }
+
+    @Test
+    fun `una edicion invalida no modifica la prueba existente`() = runTest {
+        registrar()
+
+        val original = dao.pruebas.value.single()
+        val medicionesOriginales = dao.mediciones.value.toList()
+
+        assertEquals(false, editar(equipoId = null))
+
+        assertEquals(original, dao.pruebas.value.single())
+        assertEquals(medicionesOriginales, dao.mediciones.value)
+        assertFalse(viewModel.guardado.value)
+    }
+
+    // PRUEBAS DE LIMPIEZA
+
+    @Test
+    fun `limpiarError elimina el mensaje de error`() = runTest {
+        registrar(equipoId = null)
+
+        assertEquals(
+            "Selecciona un equipo.",
+            viewModel.error.value
+        )
+
+        viewModel.limpiarError()
+
+        assertNull(viewModel.error.value)
+    }
+
+    @Test
+    fun `limpiarGuardado cambia el estado a falso`() = runTest {
+        registrar()
+
+        assertTrue(viewModel.guardado.value)
+
+        viewModel.limpiarGuardado()
+
+        assertFalse(viewModel.guardado.value)
     }
 }

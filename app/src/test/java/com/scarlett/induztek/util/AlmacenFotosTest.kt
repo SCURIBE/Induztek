@@ -1,63 +1,175 @@
 package com.scarlett.induztek.util
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.junit.rules.TemporaryFolder
+import org.robolectric.RobolectricTestRunner
 import java.io.File
 
-// Solo las partes de AlmacenFotos que no dependen de Android: los
-// archivos y el cálculo del muestreo. Decodificar imágenes necesita
-// BitmapFactory, que en un test de JUnit no existe.
+@RunWith(RobolectricTestRunner::class)
 class AlmacenFotosTest {
 
     @get:Rule
     val temporal = TemporaryFolder()
+
+    private val context =
+        ApplicationProvider.getApplicationContext<android.content.Context>()
 
     private fun carpetaEvidencias(): File {
         return temporal.newFolder(AlmacenFotos.CARPETA)
     }
 
     private fun foto(carpeta: File, nombre: String): File {
-        return File(carpeta, nombre).apply { writeText("jpg") }
+        return File(carpeta, nombre).apply {
+            writeText("jpg")
+        }
+    }
+
+    private fun crearImagenValida(archivo: File) {
+        val bitmap = Bitmap.createBitmap(
+            100,
+            100,
+            Bitmap.Config.ARGB_8888
+        )
+
+        archivo.outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+        }
+
+        bitmap.recycle()
+    }
+
+    // ---------------- CARPETA ----------------
+
+    @Test
+    fun carpetaObtieneRutaDeEvidencias() {
+        val carpeta = AlmacenFotos.carpeta(context)
+
+        assertEquals(
+            File(context.filesDir, AlmacenFotos.CARPETA),
+            carpeta
+        )
+    }
+
+    // ---------------- CREAR ARCHIVO ----------------
+
+    @Test
+    fun crearArchivoCreaArchivoDentroDeEvidencias() {
+        val archivo = AlmacenFotos.crearArchivo(context)
+
+        assertTrue(archivo.exists())
+        assertTrue(archivo.isFile)
+        assertEquals(AlmacenFotos.CARPETA, archivo.parentFile?.name)
+    }
+
+    // ---------------- NORMALIZAR ----------------
+
+    @Test
+    fun normalizarReconoceImagenValida() {
+        val archivo = File(temporal.root, "foto.jpg")
+        crearImagenValida(archivo)
+
+        assertTrue(AlmacenFotos.normalizar(archivo))
     }
 
     @Test
-    fun `una foto de 12 MP se decodifica a la mitad`() {
-        // 4032 / 2 = 2016, todavía sobre 1920: alcanza sin perder nitidez.
+    fun normalizarRechazaArchivoInexistente() {
+        val archivo = File(temporal.root, "inexistente.jpg")
+
+        assertFalse(AlmacenFotos.normalizar(archivo))
+    }
+
+    @Test
+    fun normalizarRechazaArchivoVacio() {
+        val archivo = File(temporal.root, "vacio.jpg")
+        archivo.createNewFile()
+
+        assertFalse(AlmacenFotos.normalizar(archivo))
+    }
+
+    // ---------------- LEER ----------------
+
+    @Test
+    fun leerRutaNullDevuelveNull() {
+        assertNull(AlmacenFotos.leer(null))
+    }
+
+    @Test
+    fun leerArchivoInexistenteDevuelveNull() {
+        assertNull(
+            AlmacenFotos.leer(
+                File(temporal.root, "no_existe.jpg").absolutePath
+            )
+        )
+    }
+
+    @Test
+    fun leerImagenValidaDevuelveBitmap() {
+        val archivo = File(temporal.root, "foto.jpg")
+        crearImagenValida(archivo)
+
+        val bitmap = AlmacenFotos.leer(archivo.absolutePath)
+
+        assertNotNull(bitmap)
+        bitmap?.recycle()
+    }
+
+    // ---------------- CALCULAR MUESTREO ----------------
+
+    @Test
+    fun unaFotoDe12MPSeDecodificaALaMitad() {
         assertEquals(
             2,
-            AlmacenFotos.calcularMuestreo(4032, 3024, AlmacenFotos.LADO_GUARDADO)
+            AlmacenFotos.calcularMuestreo(
+                4032,
+                3024,
+                AlmacenFotos.LADO_GUARDADO
+            )
         )
     }
 
     @Test
-    fun `la miniatura de la lista se reduce bastante mas`() {
-        // 1920 / 4 = 480 sobre 256, pero 1920 / 8 = 240 ya quedaría bajo.
+    fun miniaturaSeReduceBastanteMas() {
         assertEquals(
             4,
-            AlmacenFotos.calcularMuestreo(1920, 1440, AlmacenFotos.LADO_MINIATURA)
+            AlmacenFotos.calcularMuestreo(
+                1920,
+                1440,
+                AlmacenFotos.LADO_MINIATURA
+            )
         )
     }
 
     @Test
-    fun `una foto chica no se reduce`() {
-        assertEquals(1, AlmacenFotos.calcularMuestreo(640, 480, 1080))
-        assertEquals(1, AlmacenFotos.calcularMuestreo(1080, 1080, 1080))
+    fun unaFotoChicaNoSeReduce() {
+        assertEquals(
+            1,
+            AlmacenFotos.calcularMuestreo(640, 480, 1080)
+        )
+
+        assertEquals(
+            1,
+            AlmacenFotos.calcularMuestreo(1080, 1080, 1080)
+        )
     }
 
     @Test
-    fun `el muestreo mira el lado mayor aunque la foto este vertical`() {
+    fun muestreoConsideraElLadoMayor() {
         assertEquals(
             AlmacenFotos.calcularMuestreo(4032, 3024, 1000),
             AlmacenFotos.calcularMuestreo(3024, 4032, 1000)
         )
     }
 
+    // ---------------- BORRAR ----------------
+
     @Test
-    fun `borra una foto de la carpeta de evidencias`() {
+    fun borraFotoDeCarpetaEvidencias() {
         val archivo = foto(carpetaEvidencias(), "equipo_1.jpg")
 
         assertTrue(AlmacenFotos.borrar(archivo.absolutePath))
@@ -65,7 +177,7 @@ class AlmacenFotosTest {
     }
 
     @Test
-    fun `no borra archivos fuera de la carpeta de evidencias`() {
+    fun noBorraArchivosFueraDeEvidencias() {
         val ajeno = foto(temporal.newFolder("otra"), "importante.jpg")
 
         assertFalse(AlmacenFotos.borrar(ajeno.absolutePath))
@@ -73,17 +185,27 @@ class AlmacenFotosTest {
     }
 
     @Test
-    fun `borrar sin foto o una foto que ya no esta no falla`() {
+    fun borrarSinRutaNoFunciona() {
         assertFalse(AlmacenFotos.borrar(null))
         assertFalse(AlmacenFotos.borrar(""))
-        assertFalse(
-            AlmacenFotos.borrar(File(carpetaEvidencias(), "no_existe.jpg").absolutePath)
-        )
     }
 
     @Test
-    fun `limpia solo las fotos que ningun equipo usa`() {
+    fun borrarArchivoInexistenteDevuelveFalse() {
+        val archivo = File(
+            carpetaEvidencias(),
+            "no_existe.jpg"
+        )
+
+        assertFalse(AlmacenFotos.borrar(archivo.absolutePath))
+    }
+
+    // ---------------- LIMPIAR HUERFANAS ----------------
+
+    @Test
+    fun limpiaFotosQueNingunEquipoUsa() {
         val carpeta = carpetaEvidencias()
+
         val enUso = foto(carpeta, "equipo_1.jpg")
         val huerfana = foto(carpeta, "equipo_2.jpg")
         val otraHuerfana = foto(carpeta, "equipo_3.jpg")
@@ -100,21 +222,58 @@ class AlmacenFotosTest {
     }
 
     @Test
-    fun `reconoce una foto en uso aunque la ruta este escrita distinto`() {
+    fun reconoceFotoEnUsoConRutaDiferente() {
         val carpeta = carpetaEvidencias()
         val enUso = foto(carpeta, "equipo_1.jpg")
 
-        // La misma foto, nombrada pasando por una carpeta y volviendo.
-        val rutaRodeada = File(carpeta, "../${AlmacenFotos.CARPETA}/equipo_1.jpg").path
+        val rutaRodeada = File(
+            carpeta,
+            "../${AlmacenFotos.CARPETA}/equipo_1.jpg"
+        ).path
 
-        assertEquals(0, AlmacenFotos.limpiarHuerfanas(carpeta, listOf(rutaRodeada)))
+        assertEquals(
+            0,
+            AlmacenFotos.limpiarHuerfanas(
+                carpeta,
+                listOf(rutaRodeada)
+            )
+        )
+
         assertTrue(enUso.exists())
     }
 
     @Test
-    fun `sin carpeta de evidencias no hay nada que limpiar`() {
-        val inexistente = File(temporal.root, "nunca_creada")
+    fun carpetaInexistenteNoEliminaNada() {
+        val inexistente = File(
+            temporal.root,
+            "nunca_creada"
+        )
 
-        assertEquals(0, AlmacenFotos.limpiarHuerfanas(inexistente, emptyList()))
+        assertEquals(
+            0,
+            AlmacenFotos.limpiarHuerfanas(
+                inexistente,
+                emptyList()
+            )
+        )
+    }
+
+    @Test
+    fun limpiarHuerfanasNoEliminaSubcarpetas() {
+        val carpeta = carpetaEvidencias()
+
+        val subcarpeta = File(carpeta, "subcarpeta")
+        subcarpeta.mkdir()
+
+        val fotoHuerfana = foto(carpeta, "equipo_2.jpg")
+
+        val borradas = AlmacenFotos.limpiarHuerfanas(
+            carpeta,
+            emptyList()
+        )
+
+        assertEquals(1, borradas)
+        assertTrue(subcarpeta.exists())
+        assertFalse(fotoHuerfana.exists())
     }
 }

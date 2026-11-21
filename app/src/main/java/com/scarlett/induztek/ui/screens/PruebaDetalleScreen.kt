@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -20,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,18 +52,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-/*
- * El protocolo de una prueba: todos sus datos, sus mediciones con el
- * resultado frente al rango, y la comparación con la prueba anterior
- * comparable del mismo equipo.
- *
- * De esta pantalla sale el PDF que recibe el cliente, con el mismo
- * contenido: lo arma viewmodel/Protocolo y lo dibuja util/ProtocoloPdf.
- */
 @Composable
 fun PruebaDetalleScreen(
     pruebaId: Int,
-    alVolver: () -> Unit
+    alVolver: () -> Unit,
+    alEditar: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -114,8 +109,6 @@ fun PruebaDetalleScreen(
         val actual = conMediciones
 
         if (actual == null) {
-            // Pasa mientras llega la consulta, y también si la prueba
-            // fue eliminada en cascada al borrar su equipo.
             Text(
                 text = "Esta prueba ya no está disponible.",
                 style = MaterialTheme.typography.bodyLarge
@@ -132,7 +125,10 @@ fun PruebaDetalleScreen(
             todas
         )
 
-        val comparaciones = HistorialComparacion.comparar(actual, anterior)
+        val comparaciones = HistorialComparacion.comparar(
+            actual,
+            anterior
+        )
 
         Text(
             text = "Protocolo de prueba",
@@ -145,8 +141,18 @@ fun PruebaDetalleScreen(
             color = MaterialTheme.colorScheme.primary
         )
 
-        // Lo que se entrega al cliente en terreno. Generar el PDF lee la
-        // foto y escribe un archivo: va fuera del hilo principal.
+        // NUEVO: botón para editar la prueba
+        OutlinedButton(
+            onClick = alEditar,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = null
+            )
+            Text("  Editar prueba")
+        }
+
         Button(
             onClick = {
                 generandoPdf = true
@@ -167,8 +173,12 @@ fun PruebaDetalleScreen(
                                 AlmacenFotos.LADO_PDF
                             )
 
-                            ProtocoloPdf.generar(context, contenido, foto) to
-                                    contenido.asunto
+                            ProtocoloPdf.generar(
+                                context,
+                                contenido,
+                                foto
+                            ) to contenido.asunto
+
                         } catch (_: Exception) {
                             null
                         }
@@ -229,14 +239,18 @@ fun PruebaDetalleScreen(
             ) {
                 Dato(
                     "Equipo",
-                    equipo?.let { "${it.codigo} — ${it.tipo.etiqueta}" }
-                        ?: "(equipo eliminado)"
+                    equipo?.let {
+                        "${it.codigo} — ${it.tipo.etiqueta}"
+                    } ?: "(equipo eliminado)"
                 )
+
                 Dato("Ubicación", prueba.ubicacion)
+
                 Dato(
                     "Fecha y hora",
                     FechaFormato.formatear(prueba.fechaHora)
                 )
+
                 Dato("Unidad de medida", unidad)
 
                 if (prueba.cliente.isNotBlank()) {
@@ -305,6 +319,7 @@ private fun Dato(etiqueta: String, valor: String) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
         Text(
             text = valor,
             style = MaterialTheme.typography.bodyLarge
@@ -342,8 +357,6 @@ private fun FilaComparacion(
                 style = MaterialTheme.typography.headlineSmall
             )
 
-            // El resultado no está guardado: se deduce del rango cada
-            // vez, así no puede contradecir al valor.
             if (resultado != ResultadoMedicion.NO_EVALUADO) {
                 Text(
                     text = resultado.etiqueta,

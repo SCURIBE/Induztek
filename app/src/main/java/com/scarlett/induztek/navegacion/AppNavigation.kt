@@ -1,4 +1,3 @@
-
 package com.scarlett.induztek.navegacion
 
 import androidx.compose.foundation.layout.padding
@@ -13,14 +12,18 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.scarlett.induztek.Repository.data.RepositoryProvider
 import com.scarlett.induztek.Repository.model.Usuario
 import com.scarlett.induztek.ui.screens.EditarEquipoScreen
@@ -28,15 +31,13 @@ import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
 import com.scarlett.induztek.ui.screens.EquiposScreen
 import com.scarlett.induztek.ui.screens.HistorialScreen
 import com.scarlett.induztek.ui.screens.NuevaPruebaScreen
+import com.scarlett.induztek.ui.screens.PostScreen
 import com.scarlett.induztek.ui.screens.PruebaDetalleScreen
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
+import com.scarlett.induztek.viewmodel.PostViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.collectAsState
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +54,8 @@ fun AppNavigation(
         Rutas.EQUIPO_DETALLE -> "Detalle del equipo"
         Rutas.EQUIPO_EDITAR -> "Editar Equipo"
         Rutas.PRUEBA_DETALLE -> "Protocolo de prueba"
+        Rutas.PRUEBA_EDITAR -> "Editar prueba"
+        Rutas.Publicaciones.ruta -> "Publicaciones externas"
         else -> Rutas.barraInferior
             .find { it.ruta == rutaActual }
             ?.titulo ?: "Induztek"
@@ -61,7 +64,8 @@ fun AppNavigation(
     val mostrarBarrasInferiores =
         rutaActual != Rutas.EQUIPO_DETALLE &&
                 rutaActual != Rutas.EQUIPO_EDITAR &&
-                rutaActual != Rutas.PRUEBA_DETALLE
+                rutaActual != Rutas.PRUEBA_DETALLE &&
+                rutaActual != Rutas.PRUEBA_EDITAR
 
     Scaffold(
         topBar = {
@@ -131,6 +135,8 @@ fun AppNavigation(
             factory = PruebaViewModelFactory(pruebaRepository)
         )
 
+        val postViewModel: PostViewModel = viewModel()
+
         val equipos by equipoViewModel.equipos.collectAsState()
         val pruebas by pruebaViewModel.pruebas.collectAsState()
 
@@ -142,7 +148,9 @@ fun AppNavigation(
             composable(Rutas.Equipos.ruta) {
                 EquiposScreen(
                     alSeleccionarEquipo = { equipo ->
-                        navController.navigate(Rutas.equipoDetalle(equipo.id))
+                        navController.navigate(
+                            Rutas.equipoDetalle(equipo.id)
+                        )
                     }
                 )
             }
@@ -150,7 +158,9 @@ fun AppNavigation(
             composable(
                 route = Rutas.EQUIPO_DETALLE,
                 arguments = listOf(
-                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                    navArgument(Rutas.ARG_ID) {
+                        type = NavType.IntType
+                    }
                 )
             ) { entrada ->
                 val id = entrada.arguments?.getInt(Rutas.ARG_ID)
@@ -188,7 +198,9 @@ fun AppNavigation(
             composable(
                 route = Rutas.EQUIPO_EDITAR,
                 arguments = listOf(
-                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                    navArgument(Rutas.ARG_ID) {
+                        type = NavType.IntType
+                    }
                 )
             ) { entrada ->
                 val id = entrada.arguments?.getInt(Rutas.ARG_ID)
@@ -196,6 +208,7 @@ fun AppNavigation(
 
                 if (equipo != null) {
                     val error by equipoViewModel.error.collectAsState()
+
                     EditarEquipoScreen(
                         equipo = equipo,
                         errorExterno = error,
@@ -219,7 +232,9 @@ fun AppNavigation(
             composable(
                 route = Rutas.PRUEBA_DETALLE,
                 arguments = listOf(
-                    navArgument(Rutas.ARG_ID) { type = NavType.IntType }
+                    navArgument(Rutas.ARG_ID) {
+                        type = NavType.IntType
+                    }
                 )
             ) { entrada ->
                 val id = entrada.arguments?.getInt(Rutas.ARG_ID)
@@ -227,7 +242,35 @@ fun AppNavigation(
                 if (id != null) {
                     PruebaDetalleScreen(
                         pruebaId = id,
-                        alVolver = { navController.popBackStack() }
+                        alVolver = {
+                            navController.popBackStack()
+                        },
+                        alEditar = {
+                            navController.navigate(
+                                Rutas.pruebaEditar(id)
+                            )
+                        }
+                    )
+                }
+            }
+
+            composable(
+                route = Rutas.PRUEBA_EDITAR,
+                arguments = listOf(
+                    navArgument(Rutas.ARG_ID) {
+                        type = NavType.IntType
+                    }
+                )
+            ) { entrada ->
+                val id = entrada.arguments?.getInt(Rutas.ARG_ID)
+
+                if (id != null) {
+                    NuevaPruebaScreen(
+                        tecnicoInicial = usuario.nombreCompleto,
+                        pruebaId = id,
+                        alFinalizar = {
+                            navController.popBackStack()
+                        }
                     )
                 }
             }
@@ -246,6 +289,10 @@ fun AppNavigation(
                         )
                     }
                 )
+            }
+
+            composable(Rutas.Publicaciones.ruta) {
+                PostScreen(viewModel = postViewModel)
             }
         }
     }

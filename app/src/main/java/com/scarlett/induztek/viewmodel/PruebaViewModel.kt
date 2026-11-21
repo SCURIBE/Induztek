@@ -1,4 +1,3 @@
-
 package com.scarlett.induztek.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -36,15 +35,7 @@ class PruebaViewModel(
         }
     }
 
-    /*
-     * Registra una prueba con sus mediciones. La pantalla entrega lo
-     * que el usuario eligió y escribió; el ViewModel valida, arma las
-     * entidades y guarda todo en una sola transacción.
-     *
-     * La fecha se toma aquí, al guardar, y no al abrir la pantalla:
-     * antes la pantalla la calculaba una sola vez con remember, así que
-     * varias pruebas seguidas quedaban con la misma hora.
-     */
+    // REGISTRAR UNA PRUEBA
     fun registrar(
         equipoId: Int?,
         ubicacion: String,
@@ -74,9 +65,6 @@ class PruebaViewModel(
                 return@launch
             }
 
-            // Las validaciones de arriba ya garantizan que ninguno es
-            // null, pero el compilador no lo sabe: esto convierte los
-            // tipos nullables en no nullables.
             if (
                 equipoId == null ||
                 tipoEnsayo == null ||
@@ -109,6 +97,75 @@ class PruebaViewModel(
 
             } catch (e: Exception) {
                 _error.value = "No se pudo guardar la prueba."
+                _guardado.value = false
+                alResultado(false)
+            }
+        }
+    }
+
+    // NUEVO: EDITAR UNA PRUEBA EXISTENTE
+    fun editar(
+        prueba: Prueba,
+        equipoId: Int?,
+        ubicacion: String,
+        tipoEnsayo: TipoEnsayo?,
+        unidadMedida: UnidadMedida?,
+        mediciones: List<MedicionIngresada>,
+        cliente: String = "",
+        tecnicoResponsable: String = "",
+        observaciones: String = "",
+        alResultado: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+
+            val errorValidacion =
+                PruebaValidacion.validarEquipo(equipoId)
+                    ?: PruebaValidacion.validarUbicacion(ubicacion)
+                    ?: PruebaValidacion.validarTipoEnsayo(tipoEnsayo)
+                    ?: PruebaValidacion.validarUnidad(
+                        tipoEnsayo,
+                        unidadMedida
+                    )
+                    ?: PruebaValidacion.validarMediciones(mediciones)
+
+            if (errorValidacion != null) {
+                _error.value = errorValidacion
+                _guardado.value = false
+                alResultado(false)
+                return@launch
+            }
+
+            if (
+                equipoId == null ||
+                tipoEnsayo == null ||
+                unidadMedida == null
+            ) {
+                _error.value = "Revisa los datos de la prueba."
+                _guardado.value = false
+                alResultado(false)
+                return@launch
+            }
+
+            try {
+                repository.actualizar(
+                    prueba = prueba.copy(
+                        equipoId = equipoId,
+                        ubicacion = ubicacion.trim(),
+                        tipoEnsayo = tipoEnsayo,
+                        unidadMedida = unidadMedida,
+                        cliente = cliente.trim(),
+                        tecnicoResponsable = tecnicoResponsable.trim(),
+                        observaciones = observaciones.trim()
+                    ),
+                    mediciones = PruebaValidacion.aMediciones(mediciones)
+                )
+
+                _error.value = null
+                _guardado.value = true
+                alResultado(true)
+
+            } catch (e: Exception) {
+                _error.value = "No se pudo actualizar la prueba."
                 _guardado.value = false
                 alResultado(false)
             }

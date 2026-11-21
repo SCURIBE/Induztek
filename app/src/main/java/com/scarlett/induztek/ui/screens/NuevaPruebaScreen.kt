@@ -33,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,7 @@ import com.scarlett.induztek.viewmodel.MedicionIngresada
 import com.scarlett.induztek.viewmodel.PruebaValidacion
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
+import kotlinx.coroutines.flow.flowOf
 
 /*
  * Una fila del formulario de mediciones. La clave es un número que no
@@ -77,7 +79,11 @@ private data class FilaMedicion(
 }
 
 @Composable
-fun NuevaPruebaScreen(tecnicoInicial: String = "") {
+fun NuevaPruebaScreen(
+    tecnicoInicial: String = "",
+    pruebaId: Int? = null,
+    alFinalizar: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     val pruebaRepository = remember {
@@ -99,6 +105,11 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
     val equipos by equipoViewModel.equipos.collectAsState()
     val error by pruebaViewModel.error.collectAsState()
 
+    val pruebaEditar by remember(pruebaId) {
+        if (pruebaId != null) pruebaRepository.obtenerPorId(pruebaId)
+        else flowOf(null)
+    }.collectAsState(initial = null)
+
     var equipoSeleccionadoId by remember { mutableStateOf<Int?>(null) }
     var ubicacion by remember { mutableStateOf("") }
     var tipoEnsayo by remember { mutableStateOf<TipoEnsayo?>(null) }
@@ -110,12 +121,43 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
     var mensaje by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
 
+    var datosEdicionCargados by remember(pruebaId) {
+        mutableStateOf(pruebaId == null)
+    }
+
     var filas by remember {
         mutableStateOf(
             listOf(FilaMedicion(clave = 0, nombre = PuntosMedicion.UNICA))
         )
     }
     var siguienteClave by remember { mutableStateOf(1) }
+
+    // Al entrar en modo edición, carga una sola vez los datos existentes.
+    LaunchedEffect(pruebaEditar, pruebaId) {
+        val registro = pruebaEditar
+        if (pruebaId != null && registro != null && !datosEdicionCargados) {
+            equipoSeleccionadoId = registro.prueba.equipoId
+            ubicacion = registro.prueba.ubicacion
+            tipoEnsayo = registro.prueba.tipoEnsayo
+            unidadMedida = registro.prueba.unidadMedida
+            cliente = registro.prueba.cliente
+            tecnico = registro.prueba.tecnicoResponsable
+            observaciones = registro.prueba.observaciones
+            filas = registro.mediciones.mapIndexed { index, medicion ->
+                FilaMedicion(
+                    clave = index,
+                    nombre = medicion.nombre,
+                    valorTexto = medicion.valor.toString(),
+                    minimoTexto = medicion.minimoAceptable?.toString() ?: "",
+                    maximoTexto = medicion.maximoAceptable?.toString() ?: ""
+                )
+            }.ifEmpty {
+                listOf(FilaMedicion(clave = 0, nombre = PuntosMedicion.UNICA))
+            }
+            siguienteClave = filas.size
+            datosEdicionCargados = true
+        }
+    }
 
     val equipoSeleccionado = equipos.find {
         it.id == equipoSeleccionadoId
@@ -164,14 +206,22 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Nueva prueba",
+                text = if (pruebaId == null) "Nueva prueba" else "Editar prueba",
                 style = MaterialTheme.typography.headlineMedium
             )
 
             Text(
-                text = "Registra el protocolo de una prueba eléctrica.",
+                text = if (pruebaId == null) {
+                    "Registra el protocolo de una prueba eléctrica."
+                } else {
+                    "Corrige los datos del protocolo y sus mediciones."
+                },
                 style = MaterialTheme.typography.bodyMedium
             )
+
+            if (pruebaId != null && pruebaEditar == null) {
+                CircularProgressIndicator()
+            }
 
             CampoSeleccion(
                 etiqueta = "Equipo",
@@ -267,7 +317,9 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 habilitado = !guardando && tipoEnsayo != null
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
 
             Text(
                 text = "Mediciones",
@@ -275,9 +327,8 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
             )
 
             Text(
-                text = "Una fila por cada punto medido. El rango es " +
-                        "opcional: si lo dejas vacío, la medición no " +
-                        "se evalúa.",
+                text = "Una fila por cada punto medido. El rango es opcional: " +
+                        "si lo dejas vacío, la medición no se evalúa.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -285,8 +336,10 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
             filas.forEach { fila ->
                 val errorNombre =
                     PruebaValidacion.validarNombreMedicion(fila.nombre)
+
                 val errorValor =
                     PruebaValidacion.validarMedicion(fila.valorTexto)
+
                 val errorRango = PruebaValidacion.validarRango(
                     fila.minimoTexto,
                     fila.maximoTexto
@@ -295,27 +348,30 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.surfaceContainerLow
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        Text(
+                            text = "Punto de medición",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
                         CampoSeleccion(
-                            etiqueta = "Punto de medición",
-                            textoVacio = "Elige el punto",
+                            etiqueta = "Nombre del punto",
+                            textoVacio = "Selecciona un punto",
                             opciones = puntosLibres(fila),
-                            seleccion = fila.nombre.ifBlank { null },
+                            seleccion = fila.nombre,
                             textoDe = { it },
-                            alSeleccionar = { punto ->
+                            alSeleccionar = { nombre ->
                                 cambiarFila(fila.clave) {
-                                    it.copy(nombre = punto)
+                                    it.copy(nombre = nombre)
                                 }
                             },
-                            esInvalido =
-                                intentoGuardar && errorNombre != null,
+                            esInvalido = intentoGuardar && errorNombre != null,
                             mensajeError = errorNombre ?: "",
                             habilitado = !guardando
                         )
@@ -332,11 +388,9 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             enabled = !guardando,
-                            isError =
-                                intentoGuardar && errorValor != null,
+                            isError = intentoGuardar && errorValor != null,
                             supportingText = {
                                 val unidad = unidadMedida
-
                                 if (intentoGuardar && errorValor != null) {
                                     Text(errorValor)
                                 } else if (unidad != null) {
@@ -347,8 +401,7 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             OutlinedTextField(
                                 value = fila.minimoTexto,
@@ -362,8 +415,7 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 enabled = !guardando,
-                                isError =
-                                    intentoGuardar && errorRango != null
+                                isError = intentoGuardar && errorRango != null
                             )
 
                             OutlinedTextField(
@@ -378,8 +430,7 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 enabled = !guardando,
-                                isError =
-                                    intentoGuardar && errorRango != null
+                                isError = intentoGuardar && errorRango != null
                             )
                         }
 
@@ -442,7 +493,9 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
 
             Text(
                 text = "Datos de la visita",
@@ -489,7 +542,9 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
             )
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
                     Text(
                         text = "Fecha y hora",
                         style = MaterialTheme.typography.titleMedium
@@ -498,13 +553,16 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Se registra automáticamente al guardar.",
+                        text = if (pruebaId == null) {
+                            "Se registra automáticamente al guardar."
+                        } else {
+                            "Se conserva la fecha y hora original de la prueba."
+                        },
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
 
-            // Animación para mostrar y ocultar errores.
             AnimatedVisibility(
                 visible = error != null,
                 enter = fadeIn() + expandVertically(),
@@ -516,7 +574,6 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                 )
             }
 
-            // Animación para confirmar que la prueba se guardó.
             AnimatedVisibility(
                 visible = mensaje != null,
                 enter = fadeIn() + expandVertically(),
@@ -534,48 +591,81 @@ fun NuevaPruebaScreen(tecnicoInicial: String = "") {
                     mensaje = null
                     guardando = true
 
-                    pruebaViewModel.registrar(
-                        equipoId = equipoSeleccionadoId,
-                        ubicacion = ubicacion,
-                        tipoEnsayo = tipoEnsayo,
-                        unidadMedida = unidadMedida,
-                        mediciones = filas.map { it.aIngresada() },
-                        cliente = cliente,
-                        tecnicoResponsable = tecnico,
-                        observaciones = observaciones
-                    ) { correcto ->
+                    val alGuardar: (Boolean) -> Unit = { correcto ->
                         guardando = false
 
                         if (correcto) {
-                            mensaje = "Prueba guardada correctamente."
-                            intentoGuardar = false
-                            equipoSeleccionadoId = null
-                            ubicacion = ""
-                            tipoEnsayo = null
-                            unidadMedida = null
-                            cliente = ""
-                            tecnico = tecnicoInicial
-                            observaciones = ""
-                            filas = listOf(
-                                FilaMedicion(
-                                    clave = siguienteClave,
-                                    nombre = PuntosMedicion.UNICA
+                            if (pruebaId != null) {
+                                mensaje = "Cambios guardados correctamente."
+                                alFinalizar()
+                            } else {
+                                mensaje = "Prueba guardada correctamente."
+                                intentoGuardar = false
+                                equipoSeleccionadoId = null
+                                ubicacion = ""
+                                tipoEnsayo = null
+                                unidadMedida = null
+                                cliente = ""
+                                tecnico = tecnicoInicial
+                                observaciones = ""
+                                filas = listOf(
+                                    FilaMedicion(
+                                        clave = siguienteClave,
+                                        nombre = PuntosMedicion.UNICA
+                                    )
                                 )
+                                siguienteClave += 1
+                                pruebaViewModel.limpiarGuardado()
+                            }
+                        }
+                    }
+
+                    if (pruebaId == null) {
+                        pruebaViewModel.registrar(
+                            equipoId = equipoSeleccionadoId,
+                            ubicacion = ubicacion,
+                            tipoEnsayo = tipoEnsayo,
+                            unidadMedida = unidadMedida,
+                            mediciones = filas.map { it.aIngresada() },
+                            cliente = cliente,
+                            tecnicoResponsable = tecnico,
+                            observaciones = observaciones,
+                            alResultado = alGuardar
+                        )
+                    } else {
+                        val original = pruebaEditar?.prueba
+                        if (original == null) {
+                            guardando = false
+                            mensaje = "No se encontró la prueba que deseas editar."
+                        } else {
+                            pruebaViewModel.editar(
+                                prueba = original,
+                                equipoId = equipoSeleccionadoId,
+                                ubicacion = ubicacion,
+                                tipoEnsayo = tipoEnsayo,
+                                unidadMedida = unidadMedida,
+                                mediciones = filas.map { it.aIngresada() },
+                                cliente = cliente,
+                                tecnicoResponsable = tecnico,
+                                observaciones = observaciones,
+                                alResultado = alGuardar
                             )
-                            siguienteClave += 1
-                            pruebaViewModel.limpiarGuardado()
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !guardando && equipos.isNotEmpty()
+                enabled = !guardando && equipos.isNotEmpty() &&
+                        (pruebaId == null || datosEdicionCargados)
             ) {
                 if (guardando) {
                     CircularProgressIndicator(
                         modifier = Modifier.height(18.dp)
                     )
                 } else {
-                    Text("Guardar prueba")
+                    Text(
+                        if (pruebaId == null) "Guardar prueba"
+                        else "Guardar cambios"
+                    )
                 }
             }
         }

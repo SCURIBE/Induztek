@@ -29,4 +29,15 @@ class PruebaRepository(
     ) {
         pruebaDao.insertarConMediciones(prueba, mediciones)
     }
+
+    // NUEVO: editar una prueba existente
+    suspend fun actualizar(
+        prueba: Prueba,
+        mediciones: List<Medicion>
+    ) {
+        pruebaDao.actualizarConMediciones(
+            prueba,
+            mediciones
+        )
+    }
 }

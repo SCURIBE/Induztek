@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.scarlett.induztek.Repository.model.Medicion
 import com.scarlett.induztek.Repository.model.Prueba
 import com.scarlett.induztek.Repository.model.PruebaConMediciones
@@ -18,9 +19,32 @@ interface PruebaDao {
     @Insert
     suspend fun insertarMediciones(mediciones: List<Medicion>)
 
-    // Guardar la prueba y sus mediciones es una sola operación: si algo
-    // falla a mitad de camino no debe quedar una prueba sin mediciones.
-    // La prueba se inserta primero porque las mediciones necesitan su id.
+    // NUEVO: actualizar una prueba existente
+    @Update
+    suspend fun actualizarPrueba(prueba: Prueba)
+
+    // NUEVO: eliminar las mediciones anteriores
+    @Query("DELETE FROM mediciones WHERE pruebaId = :pruebaId")
+    suspend fun eliminarMedicionesDePrueba(pruebaId: Int)
+
+    // NUEVO: actualizar prueba y sus mediciones
+    @Transaction
+    suspend fun actualizarConMediciones(
+        prueba: Prueba,
+        mediciones: List<Medicion>
+    ) {
+        actualizarPrueba(prueba)
+        eliminarMedicionesDePrueba(prueba.id)
+
+        if (mediciones.isNotEmpty()) {
+            insertarMediciones(
+                mediciones.map {
+                    it.copy(id = 0, pruebaId = prueba.id)
+                }
+            )
+        }
+    }
+
     @Transaction
     suspend fun insertarConMediciones(
         prueba: Prueba,
@@ -39,8 +63,6 @@ interface PruebaDao {
     @Query("SELECT * FROM pruebas ORDER BY fechaHora DESC")
     fun obtenerTodasConMediciones(): Flow<List<PruebaConMediciones>>
 
-    // Devuelve null si la prueba ya no existe, por ejemplo si se
-    // elimino su equipo mientras la pantalla de detalle estaba abierta.
     @Transaction
     @Query("SELECT * FROM pruebas WHERE id = :id")
     fun obtenerPorIdConMediciones(id: Int): Flow<PruebaConMediciones?>

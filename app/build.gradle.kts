@@ -69,6 +69,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
+    testImplementation("androidx.test:core:1.6.1")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -85,5 +86,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
     ksp(libs.androidx.room.compiler)
 }

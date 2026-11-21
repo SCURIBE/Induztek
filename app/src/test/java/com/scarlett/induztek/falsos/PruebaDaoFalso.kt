@@ -1,3 +1,4 @@
+
 package com.scarlett.induztek.falsos
 
 import com.scarlett.induztek.Repository.data.PruebaDao
@@ -8,8 +9,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 
-// PruebaDao en memoria. insertarConMediciones no se reescribe: se usa la
-// del DAO real, que inserta la prueba y luego sus mediciones con el id.
 class PruebaDaoFalso : PruebaDao {
 
     val pruebas = MutableStateFlow<List<Prueba>>(emptyList())
@@ -29,6 +28,18 @@ class PruebaDaoFalso : PruebaDao {
                 mediciones.map { it.copy(id = siguienteMedicion++) }
     }
 
+    override suspend fun actualizarPrueba(prueba: Prueba) {
+        pruebas.value = pruebas.value.map {
+            if (it.id == prueba.id) prueba else it
+        }
+    }
+
+    override suspend fun eliminarMedicionesDePrueba(pruebaId: Int) {
+        mediciones.value = mediciones.value.filter {
+            it.pruebaId != pruebaId
+        }
+    }
+
     override fun obtenerTodasConMediciones(): Flow<List<PruebaConMediciones>> {
         return combine(pruebas, mediciones) { lista, todas ->
             lista.sortedByDescending { it.fechaHora }
@@ -40,7 +51,9 @@ class PruebaDaoFalso : PruebaDao {
         id: Int
     ): Flow<PruebaConMediciones?> {
         return combine(pruebas, mediciones) { lista, todas ->
-            lista.find { it.id == id }?.let { conMediciones(it, todas) }
+            lista.find { it.id == id }?.let {
+                conMediciones(it, todas)
+            }
         }
     }
 
@@ -63,4 +76,5 @@ class PruebaDaoFalso : PruebaDao {
             mediciones = todas.filter { it.pruebaId == prueba.id }
         )
     }
+
 }

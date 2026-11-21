@@ -13,9 +13,7 @@ ksp = "2.3.12"
 navigationCompose = "2.10.2"
 datastore = "1.3.0"
 exifinterface = "1.4.2"
-# Igual a la version de kotlinx-coroutines que resuelve la app (1.9.0).
-# El lint ofrece una mas nueva, pero subirla haria que los tests corran
-# con otra version de coroutines que la app.
+retrofit = "2.11.0"
 coroutinesTest = "1.9.0"
 robolectric = "4.17"
 cameraX = "1.6.2"
@@ -50,6 +48,8 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
