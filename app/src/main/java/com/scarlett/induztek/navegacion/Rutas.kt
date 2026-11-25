@@ -27,12 +27,18 @@ sealed class Rutas(
         Rutas("publicaciones", "Publicaciones", Icons.Filled.Cloud)
 
     companion object {
-        val barraInferior = listOf(
-            Equipos,
-            NuevaPrueba,
-            Historial,
-            Publicaciones
-        )
+        // Con "by lazy" la lista se arma la primera vez que se usa, cuando
+        // todos los objetos ya existen. Si se armara al iniciar la clase,
+        // el primer objeto que se toca (p. ej. Publicaciones en el título
+        // de AppNavigation) todavía sería null y quedaría null en la lista.
+        val barraInferior: List<Rutas> by lazy {
+            listOf(
+                Equipos,
+                NuevaPrueba,
+                Historial,
+                Publicaciones
+            )
+        }
 
         const val LOGIN = "login"
         const val REGISTRO = "registro"

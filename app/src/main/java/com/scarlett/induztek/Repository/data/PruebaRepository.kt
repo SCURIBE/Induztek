@@ -17,9 +17,7 @@ class PruebaRepository(
         return pruebaDao.obtenerPorIdConMediciones(id)
     }
 
-    fun obtenerPorEquipo(
-        equipoId: Int
-    ): Flow<List<PruebaConMediciones>> {
+    fun obtenerPorEquipo(equipoId: Int): Flow<List<PruebaConMediciones>> {
         return pruebaDao.obtenerPorEquipoConMediciones(equipoId)
     }
 
@@ -30,7 +28,7 @@ class PruebaRepository(
         pruebaDao.insertarConMediciones(prueba, mediciones)
     }
 
-    // NUEVO: editar una prueba existente
+    //editar una prueba existente
     suspend fun actualizar(
         prueba: Prueba,
         mediciones: List<Medicion>
@@ -39,5 +37,11 @@ class PruebaRepository(
             prueba,
             mediciones
         )
+    }
+
+    //Eliminar una prueba existente
+    suspend fun eliminar(
+        id: Int) {
+        pruebaDao.eliminarPorId(id)
     }
 }

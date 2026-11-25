@@ -1,6 +1,8 @@
 
 package com.scarlett.induztek.ui.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,8 +74,12 @@ fun NuevoEquipoScreen(
                 defaultElevation = 2.dp
             )
         ) {
+            // Scroll: con la foto tomada el contenido ya no cabe en pantalla
+            // y el botón "Guardar equipo" quedaba oculto bajo el borde.
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 

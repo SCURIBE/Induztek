@@ -19,15 +19,19 @@ interface PruebaDao {
     @Insert
     suspend fun insertarMediciones(mediciones: List<Medicion>)
 
-    // NUEVO: actualizar una prueba existente
+    //actualizar una prueba existente
     @Update
     suspend fun actualizarPrueba(prueba: Prueba)
 
-    // NUEVO: eliminar las mediciones anteriores
+    //eliminar las mediciones anteriores
     @Query("DELETE FROM mediciones WHERE pruebaId = :pruebaId")
     suspend fun eliminarMedicionesDePrueba(pruebaId: Int)
 
-    // NUEVO: actualizar prueba y sus mediciones
+    //Eliminar prueba existente
+    @Query("DELETE FROM pruebas WHERE id = :id")
+    suspend fun eliminarPorId(id: Int)
+
+    // actualizar prueba y sus mediciones
     @Transaction
     suspend fun actualizarConMediciones(
         prueba: Prueba,

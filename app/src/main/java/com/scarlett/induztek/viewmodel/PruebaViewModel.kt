@@ -1,5 +1,6 @@
 package com.scarlett.induztek.viewmodel
 
+import android.adservices.adid.AdId
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scarlett.induztek.Repository.data.PruebaRepository
@@ -167,6 +168,21 @@ class PruebaViewModel(
             } catch (e: Exception) {
                 _error.value = "No se pudo actualizar la prueba."
                 _guardado.value = false
+                alResultado(false)
+            }
+        }
+    }
+    //ELIMINAR UNA PRUEBA EXISTENTE
+    fun eliminar(
+        pruebaId: Int, alResultado: (Boolean) -> Unit = {}
+    ){
+        viewModelScope.launch {
+            try {
+                repository.eliminar(pruebaId)
+                _error.value = null
+                alResultado(true)
+            } catch (e: Exception) {
+                _error.value = "No se pudo eliminar la prueba."
                 alResultado(false)
             }
         }

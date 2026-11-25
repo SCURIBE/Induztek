@@ -1,6 +1,8 @@
 
 package com.scarlett.induztek.ui.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +62,8 @@ fun EditarEquipoScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Scroll para que los botones sigan visibles con la foto.
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
