@@ -6,12 +6,23 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
 
     private const val BASE_URL = "https://jsonplaceholder.typicode.com/"
-
     val apiService: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+}
+
+object BackendRetroFitClient {
+    private const val BASE_URL = "http://10.0.2.2:8080/api/"
+
+    val instance: BackendRetroFitClient by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(BackendApiService::class.java)
     }
 }
