@@ -12,9 +12,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -87,6 +90,11 @@ fun PruebaDetalleScreen(
     var generandoPdf by remember { mutableStateOf(false) }
     var errorPdf by remember { mutableStateOf<String?>(null) }
 
+    // Eliminar: se pide confirmación antes de borrar.
+    var confirmarEliminar by remember { mutableStateOf(false) }
+    var eliminando by remember { mutableStateOf(false) }
+    val errorPrueba by pruebaViewModel.error.collectAsState()
+
     fun formatear(valor: Double): String {
         return String.format(Locale.US, "%.2f", valor)
     }
@@ -151,6 +159,72 @@ fun PruebaDetalleScreen(
                 contentDescription = null
             )
             Text("  Editar prueba")
+        }
+
+        // Botón para eliminar la prueba. Pide confirmación con un diálogo.
+        OutlinedButton(
+            onClick = { confirmarEliminar = true },
+            enabled = !eliminando,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = null
+            )
+            Text("  Eliminar prueba")
+        }
+
+        errorPrueba?.let { mensaje ->
+            Text(
+                text = mensaje,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        if (confirmarEliminar) {
+            AlertDialog(
+                onDismissRequest = { confirmarEliminar = false },
+                title = { Text("¿Eliminar prueba?") },
+                text = {
+                    Text(
+                        "Se eliminará la prueba de " +
+                                prueba.tipoEnsayo.etiqueta +
+                                " del equipo " +
+                                (equipo?.codigo ?: "sin código") +
+                                " del " +
+                                FechaFormato.formatear(prueba.fechaHora) +
+                                ", con sus " + actual.mediciones.size +
+                                " mediciones. Esta acción no se puede deshacer."
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmarEliminar = false
+                            eliminando = true
+                            pruebaViewModel.eliminar(prueba.id) { eliminada ->
+                                eliminando = false
+                                if (eliminada) {
+                                    alVolver()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Eliminar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmarEliminar = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
 
         Button(
