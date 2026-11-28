@@ -31,11 +31,9 @@ import com.scarlett.induztek.ui.screens.EquipoDetalleScreen
 import com.scarlett.induztek.ui.screens.EquiposScreen
 import com.scarlett.induztek.ui.screens.HistorialScreen
 import com.scarlett.induztek.ui.screens.NuevaPruebaScreen
-import com.scarlett.induztek.ui.screens.PostScreen
 import com.scarlett.induztek.ui.screens.PruebaDetalleScreen
 import com.scarlett.induztek.viewmodel.EquipoViewModel
 import com.scarlett.induztek.viewmodel.EquipoViewModelFactory
-import com.scarlett.induztek.viewmodel.PostViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModel
 import com.scarlett.induztek.viewmodel.PruebaViewModelFactory
 
@@ -134,8 +132,6 @@ fun AppNavigation(
         val pruebaViewModel: PruebaViewModel = viewModel(
             factory = PruebaViewModelFactory(pruebaRepository)
         )
-
-        val postViewModel: PostViewModel = viewModel()
 
         val equipos by equipoViewModel.equipos.collectAsState()
         val pruebas by pruebaViewModel.pruebas.collectAsState()
@@ -289,10 +285,6 @@ fun AppNavigation(
                         )
                     }
                 )
-            }
-
-            composable(Rutas.Publicaciones.ruta) {
-                PostScreen(viewModel = postViewModel)
             }
         }
     }
